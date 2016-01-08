@@ -134,8 +134,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     public func stop() {
         if (self.player != nil) {
             self.currentState = .Waiting
+            self.currentPlayerItem?.removeObserver(self, forKeyPath: "status")
             self.currentPlayerItem = nil
-            self.player?.delete(self)
+            self.player = nil
             debug("Stopping current item")
             self.delegate?.twistStatusChanged()
         }
@@ -145,7 +146,14 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         if !isPlayable() {
             return
         }
-        debug("Go to next item")
+        
+        // TODO:
+        // Check the repeat
+        // Check the shuffle settings
+        if self.currentIndex < self.dataSource!.twistNumberOfItems() {
+            self.stop()
+            self.play(self.currentIndex + 1)
+        }
     }
 
     public func previous() {
@@ -153,7 +161,14 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             return
         }
 
-        debug("Go to previous item")
+        // TODO:
+        // Seek to 0 if time is more than 5 seconds, else go to previous
+        // Check the repeat
+        // Check the shuffle settings
+        if self.currentIndex != 0 {
+            self.stop()
+            self.play(self.currentIndex - 1)
+        }
     }
 
     func isPlayable() -> Bool {
