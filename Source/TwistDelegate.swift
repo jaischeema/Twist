@@ -11,8 +11,10 @@ import AVFoundation
 
 public protocol TwistDelegate {
     func twistCurrentItemChanged(item: AVPlayerItem)
+    func twistStatusChanged()
 }
 
 public extension TwistDelegate {
     func twistCurrentItemChanged(item: AVPlayerItem) {}
+    func twistStatusChanged() {}
 }

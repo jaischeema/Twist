@@ -9,8 +9,7 @@
 import Foundation
 import AVFoundation
 
-let debugging = true
-
+private let debugging = true
 private var myContext = 0
 
 func debug(message: String) {
@@ -53,6 +52,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     func preAction() {
         self.preConfigured = true
+        self.player = AVPlayer()
         self.registerAudioSession()
     }
     
@@ -92,12 +92,12 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             debug("Player called but player not in playable state, doing nothing.")
             return
         }
-
-        if player == nil {
+        
+        if !preConfigured { self.preAction() }
+        
+        if self.currentPlayerItem == nil {
+            debug("Creating new AVPlayerItem")
             
-            if !preConfigured { self.preAction() }
-            
-            debug("Player not configured, creating new instance.")
             self.dataSource?.twistURLForItemAtIndex(index) { currentItemURL in
                 let asset = AVURLAsset(URL: currentItemURL, options: nil)
                 self.currentIndex = index
@@ -114,6 +114,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             debug("Playing current Item")
             self.player!.play()
             self.currentState = .Playing
+            self.delegate?.twistStatusChanged()
         }
     }
 
@@ -126,6 +127,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             debug("Pausing current item")
             self.player?.pause()
             self.currentState = .Paused
+            self.delegate?.twistStatusChanged()
         }
     }
 
@@ -135,6 +137,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             self.currentPlayerItem = nil
             self.player?.delete(self)
             debug("Stopping current item")
+            self.delegate?.twistStatusChanged()
         }
     }
 
@@ -213,11 +216,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             }
             
             if self.currentPlayerItem != nil && object is AVPlayerItem {
-                self.currentState = .Ready
                 self.player!.play()
+                self.currentState = .Playing
+                self.delegate?.twistStatusChanged()
                 self.maybeCacheCurrentItem()
             }
-            
         } else {
             super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
         }
