@@ -154,12 +154,12 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                     options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
                     context: &myContext
                 )
-//                self.currentPlayerItem!.addObserver(
-//                    self,
-//                    forKeyPath: kLoadedTimeRangesKey,
-//                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
-//                    context: &myContext
-//                )
+                self.currentPlayerItem!.addObserver(
+                    self,
+                    forKeyPath: kLoadedTimeRangesKey,
+                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
+                    context: &myContext
+                )
                 self.player = AVPlayer(playerItem: self.currentPlayerItem!)
             }
         } else {
@@ -245,7 +245,6 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                     self.currentState = .Playing
                     self.delegate?.twistStatusChanged()
                 } else {
-                    debug(self.currentPlayerItem?.error)
                     debug("Status updated but not ready to play")
                 }
             }
