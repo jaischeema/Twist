@@ -57,6 +57,44 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.preConfigured = true
         self.player = AVPlayer()
         self.registerAudioSession()
+        self.registerListeners()
+    }
+    
+    func registerListener(selector: Selector, notification: String) {
+        NSNotificationCenter.defaultCenter().addObserver(
+            self,
+            selector: selector,
+            name: notification,
+            object: nil
+        )
+    }
+    
+    func registerListeners() {
+        registerListener(#selector(Twist.playerItemDidReachEnd(_:)), notification: AVPlayerItemDidPlayToEndTimeNotification)
+        registerListener(#selector(Twist.playerItemFailedToPlayEndTime(_:)), notification: AVPlayerItemFailedToPlayToEndTimeNotification)
+        registerListener(#selector(Twist.playerItemPlaybackStall(_:)), notification: AVPlayerItemPlaybackStalledNotification)
+        registerListener(#selector(Twist.interruption(_:)), notification: AVAudioSessionInterruptionNotification)
+        registerListener(#selector(Twist.routeChange(_:)), notification: AVAudioSessionRouteChangeNotification)
+    }
+    
+    func playerItemDidReachEnd(notification: NSNotification) {
+        debug("item reached end")
+    }
+    
+    func playerItemFailedToPlayEndTime(notification: NSNotification) {
+        debug("item failed to play")
+    }
+    
+    func playerItemPlaybackStall(notification: NSNotification) {
+        debug("playback stalled")
+    }
+    
+    func interruption(notification: NSNotification) {
+        debug("interuppted")
+    }
+    
+    func routeChange(notification: NSNotification) {
+        debug("route")
     }
     
     func registerAudioSession() {
@@ -112,10 +150,16 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                 self.currentPlayerItem = AVPlayerItem(asset: self.mediaItem!.asset)
                 self.currentPlayerItem!.addObserver(
                     self,
-                    forKeyPath: "status",
-                    options: NSKeyValueObservingOptions.New,
+                    forKeyPath: kStatusKey,
+                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
                     context: &myContext
                 )
+//                self.currentPlayerItem!.addObserver(
+//                    self,
+//                    forKeyPath: kLoadedTimeRangesKey,
+//                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
+//                    context: &myContext
+//                )
                 self.player = AVPlayer(playerItem: self.currentPlayerItem!)
             }
         } else {
@@ -142,12 +186,17 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     public func stop() {
         if (self.player != nil) {
             self.currentState = .Waiting
-            self.currentPlayerItem?.removeObserver(self, forKeyPath: "status")
+            self.removeCurrentPlayerItemObservers()
             self.currentPlayerItem = nil
             self.player = nil
             debug("Stopping current item")
             self.delegate?.twistStatusChanged()
         }
+    }
+    
+    func removeCurrentPlayerItemObservers() {
+        self.currentPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
+        self.currentPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
     }
 
     public func next() {
