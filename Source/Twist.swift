@@ -9,10 +9,12 @@
 import Foundation
 import AVFoundation
 
-private let debugging = true
-private var myContext = 0
+let debugging  = true
+var myContext  = 0
+let kStatusKey = "status"
+let kLoadedTimeRangesKey = "loadedTimeRanges"
 
-func debug(message: String) {
+func debug(message: Any) {
     if debugging {
         print("Twist: \(message)")
     }
@@ -49,6 +51,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     // Private variables
     var player: AVPlayer?
     var preConfigured: Bool = false
+    var mediaItem: MediaItem?
     
     func preAction() {
         self.preConfigured = true
@@ -99,9 +102,14 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             debug("Creating new AVPlayerItem")
             
             self.dataSource?.twistURLForItemAtIndex(index) { currentItemURL in
-                let asset = AVURLAsset(URL: currentItemURL, options: nil)
+                self.mediaItem = MediaItem(
+                    mediaURL:       currentItemURL,
+                    cachePath:      self.dataSource?.twistCacheFilePathURLForItemAtIndex(index).path!,
+                    cachingEnabled: self.dataSource?.twistShouldCacheItemAtIndex(index)
+                )
+                
                 self.currentIndex = index
-                self.currentPlayerItem = AVPlayerItem(asset: asset)
+                self.currentPlayerItem = AVPlayerItem(asset: self.mediaItem!.asset)
                 self.currentPlayerItem!.addObserver(
                     self,
                     forKeyPath: "status",
@@ -175,66 +183,22 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         guard let dataSource = self.dataSource else { return false }
         return dataSource.twistNumberOfItems() > 0
     }
-    
-    func maybeCacheCurrentItem() {
-        guard let dataSource = self.dataSource else {
-            debug("Caching Failed: DataSource is nil")
-            return
-        }
-        guard dataSource.twistShouldCacheItemAtIndex(self.currentIndex) else {
-            debug("Caching Skipped")
-            return
-        }
-        guard let playerItem = self.currentPlayerItem else {
-            debug("Caching Failed: Item is not present")
-            return
-        }
-        
-        let filePathURL = dataSource.twistCacheFilePathURLForItemAtIndex(self.currentIndex)
-        
-        let composition = AVMutableComposition()
-        let timeRange = CMTimeRangeMake(kCMTimeZero, playerItem.asset.duration)
-        let compositionAudioTrack = composition.addMutableTrackWithMediaType(AVMediaTypeAudio, preferredTrackID: kCMPersistentTrackID_Invalid)
-        do {
-            try compositionAudioTrack.insertTimeRange(timeRange, ofTrack: playerItem.asset.tracksWithMediaType(AVMediaTypeAudio)[0], atTime: kCMTimeZero)
-        } catch let error as NSError {
-            debug("Caching failed: \(error.localizedDescription)")
-            return
-        }
-        
-        if let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetAppleM4A) {
-            exportSession.outputFileType = AVFileTypeAppleM4A
-            exportSession.outputURL = filePathURL
-            
-            exportSession.exportAsynchronouslyWithCompletionHandler() {
-                switch(exportSession.status) {
-                case AVAssetExportSessionStatus.Exporting:
-                    debug("Caching: exporting");
-                case AVAssetExportSessionStatus.Completed:
-                    debug("Cached!")
-                case AVAssetExportSessionStatus.Waiting:
-                    debug("Caching: waiting...")
-                case AVAssetExportSessionStatus.Failed:
-                    debug("Caching failed: \(exportSession.error?.localizedDescription)")
-                default:
-                    debug("Caching: uhmmmm something weird happened...???")
-                }
-            }
-        }
-    }
 
     override public func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         if context == &myContext {
-            
             if let player = self.player where object is AVPlayer {
                 debug("Received a message for player: \(player)")
             }
             
-            if self.currentPlayerItem != nil && object is AVPlayerItem {
-                self.player!.play()
-                self.currentState = .Playing
-                self.delegate?.twistStatusChanged()
-                self.maybeCacheCurrentItem()
+            if keyPath == kStatusKey && self.currentPlayerItem != nil && object is AVPlayerItem {
+                if self.currentPlayerItem!.status == .ReadyToPlay {
+                    self.player!.play()
+                    self.currentState = .Playing
+                    self.delegate?.twistStatusChanged()
+                } else {
+                    debug(self.currentPlayerItem?.error)
+                    debug("Status updated but not ready to play")
+                }
             }
         } else {
             super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)

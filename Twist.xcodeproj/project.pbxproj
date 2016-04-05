@@ -12,6 +12,8 @@
 		2069F3F61C3FAC8A00233AFA /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2069F3F51C3FAC8A00233AFA /* AVFoundation.framework */; };
 		2069F3FB1C3FACAA00233AFA /* Twist.h in Headers */ = {isa = PBXBuildFile; fileRef = 2069F3F91C3FACAA00233AFA /* Twist.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2069F3FE1C3FADFC00233AFA /* Twist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2069F3FD1C3FADFC00233AFA /* Twist.swift */; };
+		206AABA71CB24E53006D22F5 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206AABA61CB24E53006D22F5 /* MediaItem.swift */; };
+		206AABA91CB24E7B006D22F5 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 206AABA81CB24E7B006D22F5 /* MobileCoreServices.framework */; };
 		209D524E1C3FD0F8008708E7 /* TwistDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */; };
 		209D52501C3FD108008708E7 /* TwistDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209D524F1C3FD108008708E7 /* TwistDelegate.swift */; };
 /* End PBXBuildFile section */
@@ -35,6 +37,8 @@
 		2069F3F81C3FACAA00233AFA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2069F3F91C3FACAA00233AFA /* Twist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Twist.h; sourceTree = "<group>"; };
 		2069F3FD1C3FADFC00233AFA /* Twist.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Twist.swift; sourceTree = "<group>"; };
+		206AABA61CB24E53006D22F5 /* MediaItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
+		206AABA81CB24E7B006D22F5 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwistDataSource.swift; sourceTree = "<group>"; };
 		209D524F1C3FD108008708E7 /* TwistDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwistDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -44,6 +48,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				206AABA91CB24E7B006D22F5 /* MobileCoreServices.framework in Frameworks */,
 				2069F3F61C3FAC8A00233AFA /* AVFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -93,6 +98,7 @@
 				2069F3FD1C3FADFC00233AFA /* Twist.swift */,
 				209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */,
 				209D524F1C3FD108008708E7 /* TwistDelegate.swift */,
+				206AABA61CB24E53006D22F5 /* MediaItem.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -100,6 +106,7 @@
 		2069F3FC1C3FADA100233AFA /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				206AABA81CB24E7B006D22F5 /* MobileCoreServices.framework */,
 				2069F3F51C3FAC8A00233AFA /* AVFoundation.framework */,
 				2069F3F81C3FACAA00233AFA /* Info.plist */,
 				2069F3F91C3FACAA00233AFA /* Twist.h */,
@@ -217,6 +224,7 @@
 			files = (
 				209D52501C3FD108008708E7 /* TwistDelegate.swift in Sources */,
 				209D524E1C3FD0F8008708E7 /* TwistDataSource.swift in Sources */,
+				206AABA71CB24E53006D22F5 /* MediaItem.swift in Sources */,
 				2069F3FE1C3FADFC00233AFA /* Twist.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
