@@ -8,6 +8,7 @@
 
 import Foundation
 import AVFoundation
+import MediaPlayer
 
 let debugging  = true
 var myContext  = 0
@@ -60,6 +61,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.registerListeners()
     }
     
+    // This could potentially be for UI
+    public func refresh() {
+        self.updateMPRemoteCommandButtons()
+    }
+    
     func registerListener(selector: Selector, notification: String) {
         NSNotificationCenter.defaultCenter().addObserver(
             self,
@@ -75,6 +81,13 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         registerListener(#selector(Twist.playerItemPlaybackStall(_:)), notification: AVPlayerItemPlaybackStalledNotification)
         registerListener(#selector(Twist.interruption(_:)), notification: AVAudioSessionInterruptionNotification)
         registerListener(#selector(Twist.routeChange(_:)), notification: AVAudioSessionRouteChangeNotification)
+        
+        let commandCenter = MPRemoteCommandCenter.sharedCommandCenter()
+        commandCenter.nextTrackCommand.addTarget(self, action: #selector(Twist.next))
+        commandCenter.previousTrackCommand.addTarget(self, action: #selector(Twist.previous))
+        commandCenter.playCommand.addTarget(self, action: #selector(Twist.play(_:)))
+        commandCenter.pauseCommand.addTarget(self, action: #selector(Twist.pause))
+        commandCenter.togglePlayPauseCommand.addTarget(self, action: #selector(Twist.togglePlayPause))
     }
     
     func playerItemDidReachEnd(notification: NSNotification) {
@@ -166,7 +179,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             debug("Playing current Item")
             self.player!.play()
             self.currentState = .Playing
-            self.delegate?.twistStatusChanged()
+            self.triggerPlaybackStateChanged()
         }
     }
 
@@ -179,38 +192,48 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             debug("Pausing current item")
             self.player?.pause()
             self.currentState = .Paused
-            self.delegate?.twistStatusChanged()
+            self.triggerPlaybackStateChanged()
         }
     }
 
     public func stop() {
         if (self.player != nil) {
-            self.currentState = .Waiting
-            self.removeCurrentPlayerItemObservers()
-            self.currentPlayerItem = nil
-            self.player = nil
+            self.cleanupCurrentItem()
             debug("Stopping current item")
-            self.delegate?.twistStatusChanged()
+            self.triggerPlaybackStateChanged()
         }
     }
     
-    func removeCurrentPlayerItemObservers() {
+    func cleanupCurrentItem() {
+        self.currentState = .Waiting
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
+        self.currentPlayerItem = nil
+        self.player = nil
     }
 
     public func next() {
         if !isPlayable() {
             return
         }
-        
-        // TODO:
-        // Check the repeat
-        // Check the shuffle settings
-        if self.currentIndex < self.dataSource!.twistNumberOfItems() {
-            self.stop()
+    
+        if hasNextItem {
+            self.cleanupCurrentItem()
             self.play(self.currentIndex + 1)
         }
+    }
+    
+    // TODO:
+    // Check the repeat
+    // Check the shuffle settings
+    var hasNextItem: Bool {
+        return self.currentIndex < self.dataSource!.twistNumberOfItems() - 1
+    }
+    
+    // Check the repeat
+    // Check the shuffle settings
+    var hasPreviousItem: Bool {
+        return self.currentIndex != 0
     }
 
     public func previous() {
@@ -220,10 +243,8 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
 
         // TODO:
         // Seek to 0 if time is more than 5 seconds, else go to previous
-        // Check the repeat
-        // Check the shuffle settings
-        if self.currentIndex != 0 {
-            self.stop()
+        if hasPreviousItem {
+            self.cleanupCurrentItem()
             self.play(self.currentIndex - 1)
         }
     }
@@ -239,17 +260,54 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                 debug("Received a message for player: \(player)")
             }
             
-            if keyPath == kStatusKey && self.currentPlayerItem != nil && object is AVPlayerItem {
-                if self.currentPlayerItem!.status == .ReadyToPlay {
-                    self.player!.play()
-                    self.currentState = .Playing
-                    self.delegate?.twistStatusChanged()
-                } else {
-                    debug("Status updated but not ready to play")
+            if self.currentPlayerItem != nil && object is AVPlayerItem {
+                guard let keyPath = keyPath else { return }
+                switch keyPath {
+                case kStatusKey:
+                    if self.currentPlayerItem!.status == .ReadyToPlay {
+                        self.player!.play()
+                        self.currentState = .Playing
+                        self.triggerPlaybackStateChanged()
+                    } else {
+                        debug("Status updated but not ready to play")
+                    }
+                case kLoadedTimeRangesKey:
+                    if let availableDuration = self.availableDurationForCurrentItem() {
+                        let duration = self.currentPlayerItem!.duration
+                        let totalDuration = CMTimeGetSeconds(duration)
+                        self.delegate?.twist(self, loaded: availableDuration, outOf: totalDuration)
+                    }
+                default:
+                    print("Unhandled key :\(keyPath)")
                 }
             }
         } else {
             super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
         }
+    }
+    
+    func availableDurationForCurrentItem() -> NSTimeInterval? {
+        guard let currentItem = self.currentPlayerItem else { return nil }
+        let loadedTimeRanges = currentItem.loadedTimeRanges
+        if let timeRange = loadedTimeRanges.first?.CMTimeRangeValue {
+            let startSeconds = CMTimeGetSeconds(timeRange.start)
+            let durationSeconds = CMTimeGetSeconds(timeRange.duration)
+            return startSeconds + durationSeconds
+        }
+        return nil
+    }
+    
+    func triggerPlaybackStateChanged() {
+        self.delegate?.twistStatusChanged()
+        self.updateMPRemoteCommandButtons()
+    }
+    
+    func updateMPRemoteCommandButtons() {
+        let commandCenter = MPRemoteCommandCenter.sharedCommandCenter()
+        commandCenter.nextTrackCommand.enabled = self.hasNextItem
+        commandCenter.previousTrackCommand.enabled = self.hasPreviousItem
+        commandCenter.playCommand.enabled = self.currentState == .Paused
+        commandCenter.pauseCommand.enabled = self.currentState == .Playing
+        commandCenter.togglePlayPauseCommand.enabled = self.isPlayable()
     }
 }
