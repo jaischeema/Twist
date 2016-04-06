@@ -218,17 +218,21 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func updateMediaInfo() {
+        let mediaInfo     = self.dataSource!.twistMediaInfoForItemAtIndex(self.currentIndex)
         let defaultCenter = MPNowPlayingInfoCenter.defaultCenter()
-
         let totalDuration = NSNumber(double: CMTimeGetSeconds(self.currentPlayerItem!.duration))
         let currentTime   = NSNumber(double: CMTimeGetSeconds(self.player!.currentTime()))
-        defaultCenter.nowPlayingInfo = [
-            MPMediaItemPropertyAlbumTitle:               "Something",
-            MPMediaItemPropertyArtist:                   "Jais Cheema",
-            MPMediaItemPropertyTitle:                    "Some Title",
+        var infoDict : [String: AnyObject] = [
+            MPMediaItemPropertyAlbumTitle:               mediaInfo.album,
+            MPMediaItemPropertyArtist:                   mediaInfo.artist,
+            MPMediaItemPropertyTitle:                    mediaInfo.title,
             MPMediaItemPropertyPlaybackDuration:         totalDuration,
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime,
         ]
+        if let albumArt = mediaInfo.albumArt {
+            infoDict[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(image: albumArt)
+        }
+        defaultCenter.nowPlayingInfo = infoDict
     }
     
     func updatedPlayerTiming() {
