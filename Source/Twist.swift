@@ -91,11 +91,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func playerItemDidReachEnd(notification: NSNotification) {
-        debug("item reached end")
+        self.next()
     }
     
     func playerItemFailedToPlayEndTime(notification: NSNotification) {
-        debug("item failed to play")
+        self.next()
     }
     
     func playerItemPlaybackStall(notification: NSNotification) {
