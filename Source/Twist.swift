@@ -53,6 +53,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     var player: AVPlayer?
     var preConfigured: Bool = false
     var mediaItem: MediaItem?
+    var periodicObserver: AnyObject?
     
     func preAction() {
         self.preConfigured = true
@@ -174,6 +175,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                     context: &myContext
                 )
                 self.player = AVPlayer(playerItem: self.currentPlayerItem!)
+                self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 1), queue: dispatch_get_main_queue(), usingBlock: { (_) in
+                    self.updatedPlayerTiming()
+                })
             }
         } else {
             debug("Playing current Item")
@@ -209,7 +213,26 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
         self.currentPlayerItem = nil
+        self.player?.removeTimeObserver(self.periodicObserver!)
         self.player = nil
+    }
+    
+    func updateMediaInfo() {
+        let defaultCenter = MPNowPlayingInfoCenter.defaultCenter()
+
+        let totalDuration = NSNumber(double: CMTimeGetSeconds(self.currentPlayerItem!.duration))
+        let currentTime   = NSNumber(double: CMTimeGetSeconds(self.player!.currentTime()))
+        defaultCenter.nowPlayingInfo = [
+            MPMediaItemPropertyAlbumTitle:               "Something",
+            MPMediaItemPropertyArtist:                   "Jais Cheema",
+            MPMediaItemPropertyTitle:                    "Some Title",
+            MPMediaItemPropertyPlaybackDuration:         totalDuration,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime
+        ]
+    }
+    
+    func updatedPlayerTiming() {
+        self.updateMediaInfo()
     }
 
     public func next() {
