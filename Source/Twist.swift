@@ -59,7 +59,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     // MARK: Public API
 
     public var hasNextItem: Bool {
-        return self.currentIndex < self.dataSource!.twistNumberOfItems() - 1
+        return self.currentIndex < self.dataSource!.twistTotalItemsInQueue(self) - 1
     }
 
     public var hasPreviousItem: Bool {
@@ -68,7 +68,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     public var isPlayable: Bool {
         guard let dataSource = self.dataSource else { return false }
-        return dataSource.twistNumberOfItems() > 0
+        return dataSource.twistTotalItemsInQueue(self) > 0
     }
     
     public func play(index: Int = 0) {
@@ -82,11 +82,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         if self.currentPlayerItem == nil {
             debug("Creating new AVPlayerItem")
             
-            self.dataSource?.twistURLForItemAtIndex(index) { currentItemURL in
+            self.dataSource?.twist(self, urlForItemAtIndex: index) { currentItemURL in
                 self.mediaItem = MediaItem(
                     mediaURL:       currentItemURL,
-                    cachePath:      self.dataSource?.twistCacheFilePathURLForItemAtIndex(index).path!,
-                    cachingEnabled: self.dataSource?.twistShouldCacheItemAtIndex(index)
+                    cachePath:      self.dataSource?.twist(self, cacheFilePathForItemAtIndex: index),
+                    cachingEnabled: self.dataSource?.twist(self, shouldCacheItemAtIndex: index)
                 )
                 
                 self.currentIndex = index
@@ -269,7 +269,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func updateMediaInfo() {
-        let mediaInfo     = self.dataSource!.twistMediaInfoForItemAtIndex(self.currentIndex)
+        let mediaInfo     = self.dataSource!.twist(self, mediaInfoForItemAtIndex: self.currentIndex)
         let defaultCenter = MPNowPlayingInfoCenter.defaultCenter()
         let totalDuration = NSNumber(double: CMTimeGetSeconds(self.currentPlayerItem!.duration))
         let currentTime   = NSNumber(double: CMTimeGetSeconds(self.player!.currentTime()))
@@ -335,6 +335,6 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func triggerPlaybackStateChanged() {
-        self.delegate?.twistStatusChanged()
+        self.delegate?.twistStateChanged(self)
     }
 }

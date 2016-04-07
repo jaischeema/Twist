@@ -23,23 +23,25 @@ public struct TwistMediaInfo {
 }
 
 public protocol TwistDataSource {
-    func twistURLForItemAtIndex(index: Int, completion: (NSURL) -> Void)
-    func twistShouldCacheItemAtIndex(index: Int) -> Bool
-    func twistCacheFilePathURLForItemAtIndex(index: Int) -> NSURL
-    func twistNumberOfItems() -> Int
-    func twistMediaInfoForItemAtIndex(index: Int) -> TwistMediaInfo
+    func twistTotalItemsInQueue(twist: Twist) -> Int
+    func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL) -> Void)
+    
+    // Optional
+    func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
+    func twist(twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String
+    func twist(twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo
 }
 
 public extension TwistDataSource {
-    func twistMediaInfoForItemAtIndex(index: Int) -> TwistMediaInfo {
-        return TwistMediaInfo(title: "", artist: "", album: "")
-    }
-    
-    func twistCacheFilePathURLForItemAtIndex(index: Int) -> NSURL {
-        return NSURL()
-    }
-    
-    func twistShouldCacheItemAtIndex(index: Int) -> Bool {
+    func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool {
         return false
+    }
+    
+    func twist(twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String {
+        return ""
+    }
+    
+    func twist(twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo {
+        return TwistMediaInfo(title: "", artist: "", album: "")
     }
 }

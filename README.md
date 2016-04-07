@@ -24,9 +24,9 @@ The music player is controlled via `TwistDelegate` and `TwistDataSource` protoco
 ```swift
 public protocol TwistDelegate {
     func twist(twist: Twist, loaded: NSTimeInterval, outOf totalDuration: NSTimeInterval)
-    func twist(twist: Twist, progressed: NSTimeInterval)
-    func twistCurrentItemChanged(item: AVPlayerItem)
-    func twistStatusChanged()
+    func twist(twist: Twist, playedTo duration: NSTimeInterval)
+    func twist(twist: Twist, startedPlayingItem item: AVPlayerItem)
+    func twistStateChanged(twist: Twist)
 }
 ```
 
@@ -36,12 +36,12 @@ All methods are optional and have been provided with default implementation.
 
 ```swift
 public protocol TwistDataSource {
-    func twistURLForItemAtIndex(index: Int, completion: (NSURL) -> Void)
-    func twistNumberOfItems() -> Int
-    // optional
-    func twistShouldCacheItemAtIndex(index: Int) -> Bool
-    func twistCacheFilePathURLForItemAtIndex(index: Int) -> NSURL
-    func twistMediaInfoForItemAtIndex(index: Int) -> TwistMediaInfo
+    func twistTotalItemsInQueue(twist: Twist) -> Int
+    func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL) -> Void)
+    // Optional
+    func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
+    func twist(twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String
+    func twist(twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo
 }
 ```
 
@@ -59,7 +59,7 @@ public struct TwistMediaInfo {
     var albumArt: UIImage?
 
     public init(title: String, artist: String, album: String, albumArt: UIImage? = nil) {
-       ....
+        ...
     }
 }
 ```
