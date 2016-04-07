@@ -52,6 +52,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     // Private variables
     var player: AVPlayer?
     var preConfigured: Bool = false
+    var interruptedWhilePlaying: Bool = false
     var mediaItem: MediaItem?
     var periodicObserver: AnyObject?
     
@@ -69,10 +70,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     func registerListener(selector: Selector, notification: String) {
         NSNotificationCenter.defaultCenter().addObserver(
-            self,
-            selector: selector,
-            name: notification,
-            object: nil
+            self, selector: selector, name: notification, object: nil
         )
     }
     
@@ -104,11 +102,29 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func interruption(notification: NSNotification) {
-        debug("interuppted")
+        if  let notificationType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+            let interruptionType = AVAudioSessionInterruptionType(rawValue: notificationType) {
+            switch interruptionType {
+            case .Began:
+                self.interruptedWhilePlaying = self.currentState == .Playing
+                self.pause()
+            case .Ended:
+                if self.interruptedWhilePlaying { self.play() }
+            }
+        }
     }
     
     func routeChange(notification: NSNotification) {
-        debug("route")
+        if  let notificationType = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+            let reason = AVAudioSessionRouteChangeReason(rawValue: notificationType) {
+            switch reason {
+            case .OldDeviceUnavailable:
+                self.pause()
+                debug("Route changed and paused")
+            default:
+                debug("Route changed but no need to pause: \(notificationType.description)")
+            }
+        }
     }
     
     func registerAudioSession() {
