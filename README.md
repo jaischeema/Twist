@@ -1,6 +1,6 @@
 # Twist Player
 
-Twist provides a full fledged music player functionality
+Twist provides a full fledged music player functionality. **This is still in alpha stage and is being actively developed.**
 
 ## Features
 
