@@ -38,25 +38,132 @@ public enum TwistState: Int {
 public class Twist: NSObject, AVAudioPlayerDelegate {
     public static let defaultPlayer = Twist()
     
-    // Public Variables
+    // MARK: Public Variables
     public var repeatMode: TwistRepeatMode = .None
     public var shuffle: Bool = false
     public var dataSource: TwistDataSource?
     public var delegate: TwistDelegate?
     
-    // Public getters, private setters
+    // MARK: Public getters, Private setters
     private(set) public var currentState = TwistState.Waiting
     private(set) public var currentIndex: Int = 0
     private(set) public var currentPlayerItem: AVPlayerItem?
 
-    // Private variables
+    // MARK: Private variables
     var player: AVPlayer?
     var preConfigured: Bool = false
     var interruptedWhilePlaying: Bool = false
     var mediaItem: MediaItem?
     var periodicObserver: AnyObject?
     
-    func preAction() {
+    // MARK: Public API
+
+    public var hasNextItem: Bool {
+        return self.currentIndex < self.dataSource!.twistNumberOfItems() - 1
+    }
+
+    public var hasPreviousItem: Bool {
+        return self.currentIndex != 0
+    }
+    
+    public var isPlayable: Bool {
+        guard let dataSource = self.dataSource else { return false }
+        return dataSource.twistNumberOfItems() > 0
+    }
+    
+    public func play(index: Int = 0) {
+        if !isPlayable {
+            debug("Player called but player not in playable state, doing nothing.")
+            return
+        }
+        
+        if !preConfigured { self.configurePlayer() }
+        
+        if self.currentPlayerItem == nil {
+            debug("Creating new AVPlayerItem")
+            
+            self.dataSource?.twistURLForItemAtIndex(index) { currentItemURL in
+                self.mediaItem = MediaItem(
+                    mediaURL:       currentItemURL,
+                    cachePath:      self.dataSource?.twistCacheFilePathURLForItemAtIndex(index).path!,
+                    cachingEnabled: self.dataSource?.twistShouldCacheItemAtIndex(index)
+                )
+                
+                self.currentIndex = index
+                self.currentPlayerItem = AVPlayerItem(asset: self.mediaItem!.asset)
+                self.currentPlayerItem!.addObserver(
+                    self,
+                    forKeyPath: kStatusKey,
+                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
+                    context: &myContext
+                )
+                self.currentPlayerItem!.addObserver(
+                    self,
+                    forKeyPath: kLoadedTimeRangesKey,
+                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
+                    context: &myContext
+                )
+                self.player = AVPlayer(playerItem: self.currentPlayerItem!)
+                self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 1), queue: dispatch_get_main_queue(), usingBlock: { (_) in
+                    self.updatedPlayerTiming()
+                })
+            }
+        } else {
+            debug("Playing current Item")
+            self.player!.play()
+            self.currentState = .Playing
+            self.triggerPlaybackStateChanged()
+        }
+    }
+    
+    public func pause() {
+        if !isPlayable { return }
+        
+        if self.currentState == .Playing {
+            debug("Pausing current item")
+            self.player?.pause()
+            self.currentState = .Paused
+            self.triggerPlaybackStateChanged()
+        }
+    }
+    
+    public func next() {
+        if !isPlayable { return }
+        
+        if hasNextItem {
+            self.cleanupCurrentItem()
+            self.play(self.currentIndex + 1)
+        }
+    }
+    
+    public func stop() {
+        if (self.player != nil) {
+            self.cleanupCurrentItem()
+            debug("Stopping current item")
+            self.triggerPlaybackStateChanged()
+        }
+    }
+    
+    public func togglePlayPause() {
+        if self.currentState == .Playing {
+            self.pause()
+        } else {
+            self.play()
+        }
+    }
+
+    public func previous() {
+        if !isPlayable { return }
+        
+        // TODO: Seek to 0 if time is more than 5 seconds, else go to previous
+        if hasPreviousItem {
+            self.cleanupCurrentItem()
+            self.play(self.currentIndex - 1)
+        }
+    }
+    
+    // MARK: Listeners and events setup
+    func configurePlayer() {
         self.preConfigured = true
         self.player = AVPlayer()
         self.registerAudioSession()
@@ -151,80 +258,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    public func togglePlayPause() {
-        if self.currentState == .Playing {
-            self.pause()
-        } else {
-            self.play()
-        }
-    }
-
-    public func play(index: Int = 0) {
-        if !isPlayable() {
-            debug("Player called but player not in playable state, doing nothing.")
-            return
-        }
-        
-        if !preConfigured { self.preAction() }
-        
-        if self.currentPlayerItem == nil {
-            debug("Creating new AVPlayerItem")
-            
-            self.dataSource?.twistURLForItemAtIndex(index) { currentItemURL in
-                self.mediaItem = MediaItem(
-                    mediaURL:       currentItemURL,
-                    cachePath:      self.dataSource?.twistCacheFilePathURLForItemAtIndex(index).path!,
-                    cachingEnabled: self.dataSource?.twistShouldCacheItemAtIndex(index)
-                )
-                
-                self.currentIndex = index
-                self.currentPlayerItem = AVPlayerItem(asset: self.mediaItem!.asset)
-                self.currentPlayerItem!.addObserver(
-                    self,
-                    forKeyPath: kStatusKey,
-                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
-                    context: &myContext
-                )
-                self.currentPlayerItem!.addObserver(
-                    self,
-                    forKeyPath: kLoadedTimeRangesKey,
-                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
-                    context: &myContext
-                )
-                self.player = AVPlayer(playerItem: self.currentPlayerItem!)
-                self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 1), queue: dispatch_get_main_queue(), usingBlock: { (_) in
-                    self.updatedPlayerTiming()
-                })
-            }
-        } else {
-            debug("Playing current Item")
-            self.player!.play()
-            self.currentState = .Playing
-            self.triggerPlaybackStateChanged()
-        }
-    }
-
-    public func pause() {
-        if !isPlayable() {
-            return
-        }
-
-        if self.currentState == .Playing {
-            debug("Pausing current item")
-            self.player?.pause()
-            self.currentState = .Paused
-            self.triggerPlaybackStateChanged()
-        }
-    }
-
-    public func stop() {
-        if (self.player != nil) {
-            self.cleanupCurrentItem()
-            debug("Stopping current item")
-            self.triggerPlaybackStateChanged()
-        }
-    }
-    
+    // MARK: Helper methods
     func cleanupCurrentItem() {
         self.currentState = .Waiting
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
@@ -256,48 +290,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.updateMediaInfo()
     }
 
-    public func next() {
-        if !isPlayable() {
-            return
-        }
-    
-        if hasNextItem {
-            self.cleanupCurrentItem()
-            self.play(self.currentIndex + 1)
-        }
-    }
-    
-    // TODO:
-    // Check the repeat
-    // Check the shuffle settings
-    var hasNextItem: Bool {
-        return self.currentIndex < self.dataSource!.twistNumberOfItems() - 1
-    }
-    
-    // Check the repeat
-    // Check the shuffle settings
-    var hasPreviousItem: Bool {
-        return self.currentIndex != 0
-    }
-
-    public func previous() {
-        if !isPlayable() {
-            return
-        }
-
-        // TODO:
-        // Seek to 0 if time is more than 5 seconds, else go to previous
-        if hasPreviousItem {
-            self.cleanupCurrentItem()
-            self.play(self.currentIndex - 1)
-        }
-    }
-
-    func isPlayable() -> Bool {
-        guard let dataSource = self.dataSource else { return false }
-        return dataSource.twistNumberOfItems() > 0
-    }
-
+    // MARK: Observer methods
     override public func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         if context == &myContext {
             if let player = self.player where object is AVPlayer {
