@@ -104,10 +104,13 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             let interruptionType = AVAudioSessionInterruptionType(rawValue: notificationType) {
             switch interruptionType {
             case .Began:
-                self.interruptedWhilePlaying = self.currentState == .Playing
+                self.interruptedWhilePlaying = (self.currentState == .Playing)
                 self.pause()
             case .Ended:
-                if self.interruptedWhilePlaying { self.play() }
+                if self.interruptedWhilePlaying {
+                    self.interruptedWhilePlaying = false
+                    self.play()
+                }
             }
         }
     }
