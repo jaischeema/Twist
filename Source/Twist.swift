@@ -61,11 +61,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.player = AVPlayer()
         self.registerAudioSession()
         self.registerListeners()
-    }
-    
-    // This could potentially be for UI
-    public func refresh() {
-        self.updateMPRemoteCommandButtons()
+        self.setupRemoteCommandTargets()
     }
     
     func registerListener(selector: Selector, notification: String) {
@@ -80,7 +76,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         registerListener(#selector(Twist.playerItemPlaybackStall(_:)), notification: AVPlayerItemPlaybackStalledNotification)
         registerListener(#selector(Twist.interruption(_:)), notification: AVAudioSessionInterruptionNotification)
         registerListener(#selector(Twist.routeChange(_:)), notification: AVAudioSessionRouteChangeNotification)
-        
+    }
+    
+    func setupRemoteCommandTargets() {
         let commandCenter = MPRemoteCommandCenter.sharedCommandCenter()
         commandCenter.nextTrackCommand.addTarget(self, action: #selector(Twist.next))
         commandCenter.previousTrackCommand.addTarget(self, action: #selector(Twist.previous))
@@ -342,15 +340,5 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     func triggerPlaybackStateChanged() {
         self.delegate?.twistStatusChanged()
-        self.updateMPRemoteCommandButtons()
-    }
-    
-    func updateMPRemoteCommandButtons() {
-        let commandCenter = MPRemoteCommandCenter.sharedCommandCenter()
-        commandCenter.nextTrackCommand.enabled = self.hasNextItem
-        commandCenter.previousTrackCommand.enabled = self.hasPreviousItem
-        commandCenter.playCommand.enabled = self.currentState == .Paused
-        commandCenter.pauseCommand.enabled = self.currentState == .Playing
-        commandCenter.togglePlayPauseCommand.enabled = self.isPlayable()
     }
 }
