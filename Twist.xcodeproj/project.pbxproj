@@ -14,6 +14,7 @@
 		2069F3FE1C3FADFC00233AFA /* Twist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2069F3FD1C3FADFC00233AFA /* Twist.swift */; };
 		206AABA71CB24E53006D22F5 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206AABA61CB24E53006D22F5 /* MediaItem.swift */; };
 		206AABA91CB24E7B006D22F5 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 206AABA81CB24E7B006D22F5 /* MobileCoreServices.framework */; };
+		20881FA41CB7A81500694063 /* TestMusicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20881FA31CB7A81500694063 /* TestMusicProvider.swift */; };
 		209D524E1C3FD0F8008708E7 /* TwistDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */; };
 		209D52501C3FD108008708E7 /* TwistDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209D524F1C3FD108008708E7 /* TwistDelegate.swift */; };
 /* End PBXBuildFile section */
@@ -39,6 +40,7 @@
 		2069F3FD1C3FADFC00233AFA /* Twist.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Twist.swift; sourceTree = "<group>"; };
 		206AABA61CB24E53006D22F5 /* MediaItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
 		206AABA81CB24E7B006D22F5 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
+		20881FA31CB7A81500694063 /* TestMusicProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestMusicProvider.swift; sourceTree = "<group>"; };
 		209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwistDataSource.swift; sourceTree = "<group>"; };
 		209D524F1C3FD108008708E7 /* TwistDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwistDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -87,6 +89,7 @@
 			children = (
 				2069F3EA1C3FAC4F00233AFA /* TwistTests.swift */,
 				2069F3EC1C3FAC4F00233AFA /* Info.plist */,
+				20881FA31CB7A81500694063 /* TestMusicProvider.swift */,
 			);
 			path = TwistTests;
 			sourceTree = "<group>";
@@ -233,6 +236,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				20881FA41CB7A81500694063 /* TestMusicProvider.swift in Sources */,
 				2069F3EB1C3FAC4F00233AFA /* TwistTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

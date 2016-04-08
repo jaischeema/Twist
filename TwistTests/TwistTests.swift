@@ -10,27 +10,38 @@ import XCTest
 @testable import Twist
 
 class TwistTests: XCTestCase {
-    
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-    
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
-    }
-    
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-    
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measureBlock {
-            // Put the code you want to measure the time of here.
+    var player: Twist?
+    var provider: TestMusicProvider? {
+        didSet {
+            self.player?.delegate   = self.provider
+            self.player?.dataSource = self.provider
         }
     }
     
+    override func setUp() {
+        super.setUp()
+        self.player   = Twist()
+        self.provider = TestMusicProvider()
+    }
+    
+    override func tearDown() {
+        self.player   = nil
+        self.provider = nil
+    }
+    
+    func testPlayerStateWhenPlayerIsEmpty() {
+        assert(self.player!.currentState == .Waiting)
+        self.player?.play()
+        assert(self.player!.currentState == .Waiting)
+        self.player?.next()
+        assert(self.player!.currentState == .Waiting)
+        self.player?.previous()
+        assert(self.player!.currentState == .Waiting)
+    }
+    
+    func testPlayerStateWhenQueueIsNotEmpty() {
+        self.provider = TestMusicProvider(itemCount: 1)
+        assert(self.player!.currentState == .Waiting)
+        self.player?.play()
+    }
 }
