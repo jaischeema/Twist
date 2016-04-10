@@ -107,6 +107,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                 self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 10), queue: dispatch_get_main_queue(), usingBlock: { (_) in
                     self.updatedPlayerTiming()
                 })
+                self.delegate?.twist(self, startedPlayingItemAtIndex: self.currentIndex)
             }
         } else {
             debug("Playing current Item")
@@ -288,6 +289,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     func updatedPlayerTiming() {
         self.updateMediaInfo()
+        let totalDuration = CMTimeGetSeconds(self.currentPlayerItem!.duration)
+        let currentTime   = CMTimeGetSeconds(self.player!.currentTime())
+        self.delegate?.twist(self, playedTo: currentTime, outOf: totalDuration)
     }
 
     // MARK: Observer methods

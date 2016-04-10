@@ -11,14 +11,14 @@ import AVFoundation
 
 public protocol TwistDelegate {
     func twist(twist: Twist, loaded: NSTimeInterval, outOf totalDuration: NSTimeInterval)
-    func twist(twist: Twist, playedTo duration: NSTimeInterval)
-    func twist(twist: Twist, startedPlayingItem item: AVPlayerItem)
+    func twist(twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double)
+    func twist(twist: Twist, startedPlayingItemAtIndex itemIndex: Int)
     func twistStateChanged(twist: Twist)
 }
 
 public extension TwistDelegate {
     func twist(twist: Twist, loaded: NSTimeInterval, outOf totalDuration: NSTimeInterval) {}
-    func twist(twist: Twist, playedTo duration: NSTimeInterval) {}
-    func twist(twist: Twist, startedPlayingItem item: AVPlayerItem) {}
+    func twist(twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double) {}
+    func twist(twist: Twist, startedPlayingItemAtIndex itemIndex: Int) {}
     func twistStateChanged(twist: Twist) {}
 }
