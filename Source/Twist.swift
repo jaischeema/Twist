@@ -104,7 +104,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                     context: &myContext
                 )
                 self.player = AVPlayer(playerItem: self.currentPlayerItem!)
-                self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 1), queue: dispatch_get_main_queue(), usingBlock: { (_) in
+                self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 10), queue: dispatch_get_main_queue(), usingBlock: { (_) in
                     self.updatedPlayerTiming()
                 })
             }
