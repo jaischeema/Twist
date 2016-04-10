@@ -138,6 +138,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     public func stop() {
         if (self.player != nil) {
+            self.currentState = .Waiting
             self.cleanupCurrentItem()
             debug("Stopping current item")
             self.triggerPlaybackStateChanged()
@@ -260,7 +261,6 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
 
     // MARK: Helper methods
     func cleanupCurrentItem() {
-        self.currentState = .Waiting
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
         self.currentPlayerItem = nil
