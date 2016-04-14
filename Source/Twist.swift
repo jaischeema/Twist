@@ -46,8 +46,10 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     // MARK: Public getters, Private setters
     private(set) public var currentState = TwistState.Waiting
-    private(set) public var currentIndex: Int = 0
     private(set) public var currentPlayerItem: AVPlayerItem?
+    private(set) public var currentIndex: Int = 0 {
+        didSet { fetchCurrentItemInfo() }
+    }
 
     // MARK: Private variables
     var player: AVPlayer?
@@ -55,6 +57,19 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     var interruptedWhilePlaying: Bool = false
     var mediaItem: MediaItem?
     var periodicObserver: AnyObject?
+    var currentItemInfo: [String: AnyObject]?
+    
+    func fetchCurrentItemInfo() {
+        let mediaInfo = self.dataSource!.twist(self, mediaInfoForItemAtIndex: self.currentIndex)
+        self.currentItemInfo = [
+            MPMediaItemPropertyAlbumTitle:  mediaInfo.album,
+            MPMediaItemPropertyArtist:      mediaInfo.artist,
+            MPMediaItemPropertyTitle:       mediaInfo.title,
+        ]
+        if let albumArt = mediaInfo.albumArt {
+            self.currentItemInfo![MPMediaItemPropertyArtwork] = MPMediaItemArtwork(image: albumArt)
+        }
+    }
     
     // MARK: Public API
 
@@ -270,21 +285,12 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func updateMediaInfo() {
-        let mediaInfo     = self.dataSource!.twist(self, mediaInfoForItemAtIndex: self.currentIndex)
-        let defaultCenter = MPNowPlayingInfoCenter.defaultCenter()
-        let totalDuration = NSNumber(double: CMTimeGetSeconds(self.currentPlayerItem!.duration))
-        let currentTime   = NSNumber(double: CMTimeGetSeconds(self.player!.currentTime()))
-        var infoDict : [String: AnyObject] = [
-            MPMediaItemPropertyAlbumTitle:               mediaInfo.album,
-            MPMediaItemPropertyArtist:                   mediaInfo.artist,
-            MPMediaItemPropertyTitle:                    mediaInfo.title,
-            MPMediaItemPropertyPlaybackDuration:         totalDuration,
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime,
-        ]
-        if let albumArt = mediaInfo.albumArt {
-            infoDict[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(image: albumArt)
+        if var currentItemInfo = self.currentItemInfo {
+            let defaultCenter = MPNowPlayingInfoCenter.defaultCenter()
+            currentItemInfo[MPMediaItemPropertyPlaybackDuration] = NSNumber(double: CMTimeGetSeconds(self.currentPlayerItem!.duration))
+            currentItemInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(double: CMTimeGetSeconds(self.player!.currentTime()))
+            defaultCenter.nowPlayingInfo = currentItemInfo
         }
-        defaultCenter.nowPlayingInfo = infoDict
     }
     
     func updatedPlayerTiming() {
