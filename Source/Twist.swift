@@ -292,19 +292,19 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.player = nil
     }
     
-    func updateMediaInfo() {
+    func updateNowPlayingInfo(currentTime: Double, totalDuration: Double) {
         if var currentItemInfo = self.currentItemInfo {
             let defaultCenter = MPNowPlayingInfoCenter.defaultCenter()
-            currentItemInfo[MPMediaItemPropertyPlaybackDuration] = NSNumber(double: CMTimeGetSeconds(self.currentPlayerItem!.duration))
-            currentItemInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(double: CMTimeGetSeconds(self.player!.currentTime()))
+            currentItemInfo[MPMediaItemPropertyPlaybackDuration] = NSNumber(double: totalDuration)
+            currentItemInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(double: currentTime)
             defaultCenter.nowPlayingInfo = currentItemInfo
         }
     }
     
     func updatedPlayerTiming() {
-        self.updateMediaInfo()
         let totalDuration = CMTimeGetSeconds(self.currentPlayerItem!.duration)
         let currentTime   = CMTimeGetSeconds(self.player!.currentTime())
+        self.updateNowPlayingInfo(currentTime, totalDuration: totalDuration)
         self.delegate?.twist(self, playedTo: currentTime, outOf: totalDuration)
     }
 
