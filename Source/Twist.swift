@@ -169,13 +169,21 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         }
     }
 
+    func seekCurrentItemTo(position: Double) {
+        let time = CMTimeMakeWithSeconds(position, Int32(NSEC_PER_SEC))
+        self.player?.seekToTime(time, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
+    }
+    
     public func previous() {
         if !isPlayable { return }
         
-        // TODO: Seek to 0 if time is more than 5 seconds, else go to previous
-        if hasPreviousItem {
+        if self.player != nil && CMTimeGetSeconds(self.player!.currentTime()) > 4.0 {
+            self.seekCurrentItemTo(0.0)
+        } else if hasPreviousItem {
             self.cleanupCurrentItem()
             self.play(self.currentIndex - 1)
+        } else {
+            self.seekCurrentItemTo(0.0)
         }
     }
     
