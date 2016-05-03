@@ -86,13 +86,21 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         return dataSource.twistTotalItemsInQueue(self) > 0
     }
     
-    public func play(index: Int = 0) {
+    public func play() {
+        self.play(self.currentIndex)
+    }
+    
+    public func play(index: Int) {
         if !isPlayable {
             debug("Player called but player not in playable state, doing nothing.")
             return
         }
         
         if !preConfigured { self.configurePlayer() }
+        
+        if currentIndex != index {
+            self.cleanupCurrentItem()
+        }
         
         if self.currentPlayerItem == nil {
             debug("Creating new AVPlayerItem")
