@@ -16,11 +16,12 @@ func replaceUrlScheme(url: NSURL, scheme: String) -> NSURL? {
     return urlComponents?.URL
 }
 
-class MediaItem: NSObject, NSURLConnectionDataDelegate, AVAssetResourceLoaderDelegate {
+class MediaItem: NSObject, NSURLSessionDataDelegate, AVAssetResourceLoaderDelegate {
     var pendingRequests = [AVAssetResourceLoadingRequest]()
     var data: NSMutableData?
     var response: NSURLResponse?
-    var connection: NSURLConnection?
+    var session: NSURLSession!
+    var connection: NSURLSessionDataTask?
     
     let mediaURL:  NSURL
     let cachePath: String?
@@ -32,6 +33,11 @@ class MediaItem: NSObject, NSURLConnectionDataDelegate, AVAssetResourceLoaderDel
         self.cachePath      = cachePath
         self.cachingEnabled = cachingEnabled == nil ? false : cachingEnabled!
         super.init()
+
+        let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+        configuration.allowsCellularAccess = true
+        configuration.timeoutIntervalForRequest = 30
+        self.session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: NSOperationQueue.mainQueue())
     }
     
     var asset: AVURLAsset {
@@ -69,32 +75,35 @@ class MediaItem: NSObject, NSURLConnectionDataDelegate, AVAssetResourceLoaderDel
         }
         assert(self._asset != nil, "Asset should not be nil")
     }
-    
-    func connection(connection: NSURLConnection, didReceiveResponse response: NSURLResponse) {
+
+    func URLSession(session: NSURLSession, dataTask: NSURLSessionDataTask, didReceiveResponse response: NSURLResponse, completionHandler: (NSURLSessionResponseDisposition) -> Void) {
+        debug("Received response")
         self.data = NSMutableData()
         self.response = response
         self.processPendingRequests()
+        completionHandler(.Allow)
     }
-    
-    func connection(connection: NSURLConnection, didReceiveData data: NSData) {
+
+    func URLSession(session: NSURLSession, dataTask: NSURLSessionDataTask, didReceiveData data: NSData) {
+        debug("Received data")
         self.data?.appendData(data)
         self.processPendingRequests()
     }
-    
-    func connection(connection: NSURLConnection, didFailWithError error: NSError) {
-        print(error)
-    }
-    
-    func connectionDidFinishLoading(connection: NSURLConnection) {
-        self.processPendingRequests()
-        debug("Writing data to local cached file: \(self.cachePath!)")
-        do {
-            try self.data?.writeToFile(self.cachePath!, options: NSDataWritingOptions.AtomicWrite)
-        } catch {
-            debug("Unable to write to original file")
+
+    func URLSession(session: NSURLSession, task: NSURLSessionTask, didCompleteWithError error: NSError?) {
+        if error != nil {
+            debug(error)
+        } else {
+            self.processPendingRequests()
+            debug("Writing data to local cached file: \(self.cachePath!)")
+            do {
+                try self.data?.writeToFile(self.cachePath!, options: NSDataWritingOptions.AtomicWrite)
+            } catch {
+                debug("Unable to write to original file")
+            }
         }
     }
-    
+
     func processPendingRequests() {
         self.pendingRequests = self.pendingRequests.filter { loadingRequest in
             self.fillInContentInformation(loadingRequest.contentInformationRequest)
@@ -135,13 +144,11 @@ class MediaItem: NSObject, NSURLConnectionDataDelegate, AVAssetResourceLoaderDel
     }
     
     func resourceLoader(resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
-    
         if self.connection == nil {
             debug("Starting request to get media URL: \(self.mediaURL)")
             let request = NSURLRequest(URL: replaceUrlScheme(loadingRequest.request.URL!, scheme: "http")!)
-            self.connection = NSURLConnection(request: request, delegate: self, startImmediately: false)
-            self.connection?.setDelegateQueue(NSOperationQueue.mainQueue())
-            self.connection?.start()
+            self.connection = session.dataTaskWithRequest(request)
+            self.connection?.resume()
         }
         
         self.pendingRequests.append(loadingRequest)
