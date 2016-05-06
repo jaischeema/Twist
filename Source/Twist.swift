@@ -298,6 +298,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.currentPlayerItem = nil
         self.player?.removeTimeObserver(self.periodicObserver!)
         self.player = nil
+        self.mediaItem?.session.invalidateAndCancel()
     }
     
     func updateNowPlayingInfo(currentTime: Double, totalDuration: Double) {
