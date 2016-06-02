@@ -26,7 +26,10 @@ public protocol TwistDelegate {
     func twist(twist: Twist, loaded: NSTimeInterval, outOf totalDuration: NSTimeInterval)
     func twist(twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double)
     func twist(twist: Twist, startedPlayingItemAtIndex itemIndex: Int)
-    func twistStateChanged(twist: Twist)
+    func twist(twist: Twist, failedToPlayURL itemURL: NSURL, forItemAtIndex itemIndex: Int)
+    func twist(twist: Twist, downloadedMedia fileItemURL: NSURL, forItemAtIndex itemIndex: Int)
+    func twist(twist: Twist, willChangeStateFrom fromState: TwistState, to newState: TwistState)
+    func twist(twist: Twist, didChangeStateFrom fromState: TwistState, to newState: TwistState)
 }
 ```
 
@@ -37,7 +40,8 @@ All methods are optional and have been provided with default implementation.
 ```swift
 public protocol TwistDataSource {
     func twistTotalItemsInQueue(twist: Twist) -> Int
-    func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL) -> Void)
+    func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL?, NSError?) -> Void)
+
     // Optional
     func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
     func twist(twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String
@@ -66,9 +70,7 @@ public struct TwistMediaInfo {
 
 ## TODO
 
-- Implement Repeat modes
-- Implement Shuffling
-- Implment seeking
+- Implement Proper Shuffling Logic
 - Add tests
 - Add installation instructions for Carthage and Cocoapods
 
