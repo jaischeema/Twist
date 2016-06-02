@@ -22,6 +22,7 @@ class MediaItem: NSObject, NSURLSessionDataDelegate, AVAssetResourceLoaderDelega
     var response: NSURLResponse?
     var session: NSURLSession!
     var connection: NSURLSessionDataTask?
+    var successfulDownloadCallback: ((NSURL) -> Void)?
     
     let mediaURL:  NSURL
     let cachePath: String?
@@ -29,8 +30,8 @@ class MediaItem: NSObject, NSURLSessionDataDelegate, AVAssetResourceLoaderDelega
     var _asset: AVURLAsset?
     
     init(mediaURL: NSURL, cachePath: String?, cachingEnabled: Bool?) {
-        self.mediaURL       = mediaURL
-        self.cachePath      = cachePath
+        self.mediaURL = mediaURL
+        self.cachePath = cachePath
         self.cachingEnabled = cachingEnabled == nil ? false : cachingEnabled!
         super.init()
 
@@ -98,6 +99,7 @@ class MediaItem: NSObject, NSURLSessionDataDelegate, AVAssetResourceLoaderDelega
             debug("Writing data to local cached file: \(self.cachePath!)")
             do {
                 try self.data?.writeToFile(self.cachePath!, options: NSDataWritingOptions.AtomicWrite)
+                self.successfulDownloadCallback?(mediaURL)
             } catch {
                 debug("Unable to write to original file")
             }
