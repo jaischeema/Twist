@@ -116,7 +116,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                     cachePath:      self.dataSource?.twist(self, cacheFilePathForItemAtIndex: index),
                     cachingEnabled: self.dataSource?.twist(self, shouldCacheItemAtIndex: index)
                 )
-                
+
+                self.mediaItem?.successfulDownloadCallback = { mediaItemURL in
+                    self.delegate?.twist(self, downloadedMedia: mediaItemURL, forItemAtIndex: index)
+                }
+
                 self.currentIndex = index
                 self.currentPlayerItem = AVPlayerItem(asset: self.mediaItem!.asset)
                 self.currentPlayerItem!.addObserver(
