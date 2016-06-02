@@ -305,7 +305,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
         self.currentPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
         self.currentPlayerItem = nil
-        self.player?.removeTimeObserver(self.periodicObserver!)
+        if self.player != nil && self.periodicObserver != nil {
+            self.player!.removeTimeObserver(self.periodicObserver!)
+        }
         self.player = nil
         self.mediaItem?.session.invalidateAndCancel()
     }
