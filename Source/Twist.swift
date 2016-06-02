@@ -186,7 +186,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    func seekCurrentItemTo(position: Double) {
+    public func seekCurrentItemTo(position: Double) {
         let time = CMTimeMakeWithSeconds(position, Int32(NSEC_PER_SEC))
         self.player?.seekToTime(time, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
     }
