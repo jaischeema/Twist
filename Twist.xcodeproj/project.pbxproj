@@ -7,12 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2003EDEF1D00CEAE00454292 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2003EDEE1D00CEAE00454292 /* MediaItem.swift */; };
 		2069F3E61C3FAC4F00233AFA /* Twist.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2069F3DB1C3FAC4F00233AFA /* Twist.framework */; };
 		2069F3EB1C3FAC4F00233AFA /* TwistTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2069F3EA1C3FAC4F00233AFA /* TwistTests.swift */; };
 		2069F3F61C3FAC8A00233AFA /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2069F3F51C3FAC8A00233AFA /* AVFoundation.framework */; };
 		2069F3FB1C3FACAA00233AFA /* Twist.h in Headers */ = {isa = PBXBuildFile; fileRef = 2069F3F91C3FACAA00233AFA /* Twist.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2069F3FE1C3FADFC00233AFA /* Twist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2069F3FD1C3FADFC00233AFA /* Twist.swift */; };
-		206AABA71CB24E53006D22F5 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206AABA61CB24E53006D22F5 /* MediaItem.swift */; };
+		206AABA71CB24E53006D22F5 /* MediaItemResourceLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 206AABA61CB24E53006D22F5 /* MediaItemResourceLoader.swift */; };
 		206AABA91CB24E7B006D22F5 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 206AABA81CB24E7B006D22F5 /* MobileCoreServices.framework */; };
 		20881FA41CB7A81500694063 /* TestMusicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20881FA31CB7A81500694063 /* TestMusicProvider.swift */; };
 		209D524E1C3FD0F8008708E7 /* TwistDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */; };
@@ -31,6 +32,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2003EDEE1D00CEAE00454292 /* MediaItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
 		2069F3DB1C3FAC4F00233AFA /* Twist.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Twist.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2069F3E51C3FAC4F00233AFA /* TwistTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TwistTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2069F3EA1C3FAC4F00233AFA /* TwistTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwistTests.swift; sourceTree = "<group>"; };
@@ -39,7 +41,7 @@
 		2069F3F81C3FACAA00233AFA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2069F3F91C3FACAA00233AFA /* Twist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Twist.h; sourceTree = "<group>"; };
 		2069F3FD1C3FADFC00233AFA /* Twist.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Twist.swift; sourceTree = "<group>"; };
-		206AABA61CB24E53006D22F5 /* MediaItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
+		206AABA61CB24E53006D22F5 /* MediaItemResourceLoader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MediaItemResourceLoader.swift; sourceTree = "<group>"; };
 		206AABA81CB24E7B006D22F5 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		20881FA31CB7A81500694063 /* TestMusicProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestMusicProvider.swift; sourceTree = "<group>"; };
 		209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwistDataSource.swift; sourceTree = "<group>"; };
@@ -103,8 +105,9 @@
 				2069F3FD1C3FADFC00233AFA /* Twist.swift */,
 				209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */,
 				209D524F1C3FD108008708E7 /* TwistDelegate.swift */,
-				206AABA61CB24E53006D22F5 /* MediaItem.swift */,
+				206AABA61CB24E53006D22F5 /* MediaItemResourceLoader.swift */,
 				20E5A6681D001088006B644F /* PlayerIndex.swift */,
+				2003EDEE1D00CEAE00454292 /* MediaItem.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -231,8 +234,9 @@
 				209D52501C3FD108008708E7 /* TwistDelegate.swift in Sources */,
 				209D524E1C3FD0F8008708E7 /* TwistDataSource.swift in Sources */,
 				20E5A6691D001088006B644F /* PlayerIndex.swift in Sources */,
-				206AABA71CB24E53006D22F5 /* MediaItem.swift in Sources */,
+				206AABA71CB24E53006D22F5 /* MediaItemResourceLoader.swift in Sources */,
 				2069F3FE1C3FADFC00233AFA /* Twist.swift in Sources */,
+				2003EDEF1D00CEAE00454292 /* MediaItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

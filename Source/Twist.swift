@@ -49,8 +49,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     public var delegate: TwistDelegate?
     
     private(set) public var currentState = TwistState.Waiting
-    private(set) public var currentPlayerItem: AVPlayerItem?
-    
+
     public var repeatMode: TwistRepeatMode {
         get { return self.playerIndex.repeatMode }
         set { self.playerIndex.repeatMode = newValue }
@@ -68,6 +67,10 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             fetchCurrentItemInfo()
         }
     }
+
+    public var currentPlayerItem: AVPlayerItem? {
+        return currentMediaItem?.avPlayerItem
+    }
     
     public var isPlayable: Bool { return self.playerIndex.totalItems > 0 }
     public var hasNextItem: Bool { return self.nextIndex != nil }
@@ -79,12 +82,13 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     var player: AVPlayer?
     var preConfigured: Bool = false
     var interruptedWhilePlaying: Bool = false
-    var mediaItem: MediaItem?
     var periodicObserver: AnyObject?
     var currentItemInfo: [String: AnyObject]?
-    var nextIndex: Int? { return self.playerIndex.nextIndex }
+    var currentMediaItem: MediaItem?
+
+    var nextIndex: Int?     { return self.playerIndex.nextIndex }
     var previousIndex: Int? { return self.playerIndex.previousIndex }
-    
+
     override init() {
         super.init()
         self.playerIndex = PlayerIndex(player: self)
@@ -124,46 +128,25 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             debug("Creating new AVPlayerItem")
             
             self.dataSource?.twist(self, urlForItemAtIndex: index) { (currentItemURL, error) in
-                if error != nil {
+                guard error == nil else {
                     self.next()
                     return
                 }
-
-                self.mediaItem = MediaItem(
-                    mediaURL:       currentItemURL!,
-                    cachePath:      self.dataSource?.twist(self, cacheFilePathForItemAtIndex: index),
-                    cachingEnabled: self.dataSource?.twist(self, shouldCacheItemAtIndex: index)
-                )
-
-                self.mediaItem?.successfulDownloadCallback = { mediaItemURL in
-                    self.delegate?.twist(self, downloadedMedia: mediaItemURL, forItemAtIndex: index)
-                }
-
+                self.currentMediaItem = MediaItem(player: self, itemURL: currentItemURL!, itemIndex: index)
                 self.currentIndex = index
-                self.currentPlayerItem = AVPlayerItem(asset: self.mediaItem!.asset)
-                self.currentPlayerItem!.addObserver(
-                    self,
-                    forKeyPath: kStatusKey,
-                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
-                    context: &myContext
-                )
-                self.currentPlayerItem!.addObserver(
-                    self,
-                    forKeyPath: kLoadedTimeRangesKey,
-                    options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
-                    context: &myContext
-                )
                 self.player = AVPlayer(playerItem: self.currentPlayerItem!)
-                self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 10), queue: dispatch_get_main_queue(), usingBlock: { (_) in
+                self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 10),
+                                                                                        queue: dispatch_get_main_queue(),
+                                                                                        usingBlock: { (_) in
                     self.updatedPlayerTiming()
                 })
+
                 self.delegate?.twist(self, startedPlayingItemAtIndex: self.currentIndex)
             }
         } else {
             debug("Playing current Item")
             self.player!.play()
-            self.currentState = .Playing
-            self.triggerPlaybackStateChanged()
+            self.changeState(.Playing)
         }
     }
     
@@ -173,8 +156,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         if self.currentState == .Playing {
             debug("Pausing current item")
             self.player?.pause()
-            self.currentState = .Paused
-            self.triggerPlaybackStateChanged()
+            self.changeState(.Paused)
         }
     }
     
@@ -188,10 +170,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     public func stop() {
         if (self.player != nil) {
-            self.currentState = .Waiting
-            self.cleanupCurrentItem()
             debug("Stopping current item")
-            self.triggerPlaybackStateChanged()
+            self.cleanupCurrentItem()
+            self.changeState(.Waiting)
         }
     }
     
@@ -320,14 +301,12 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
 
     // MARK: Helper methods
     func cleanupCurrentItem() {
-        self.currentPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
-        self.currentPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
-        self.currentPlayerItem = nil
+        self.currentMediaItem?.cleanup()
+        self.currentMediaItem = nil
         if self.player != nil && self.periodicObserver != nil {
             self.player!.removeTimeObserver(self.periodicObserver!)
         }
         self.player = nil
-        self.mediaItem?.session.invalidateAndCancel()
     }
     
     func updateNowPlayingInfo(currentTime: Double, totalDuration: Double) {
@@ -346,57 +325,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.delegate?.twist(self, playedTo: currentTime, outOf: totalDuration)
     }
 
-    // MARK: Observer methods
-    override public func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        if context == &myContext {
-            if let player = self.player where object is AVPlayer {
-                debug("Received a message for player: \(player)")
-            }
-            
-            if self.currentPlayerItem != nil && object is AVPlayerItem {
-                guard let keyPath = keyPath else { return }
-                switch keyPath {
-                case kStatusKey:
-                    switch self.currentPlayerItem!.status {
-                    case .ReadyToPlay:
-                        self.player!.play()
-                        self.currentState = .Playing
-                        self.triggerPlaybackStateChanged()
-                    case .Failed:
-                        debug("Failed to play current media item")
-                        self.delegate?.twist(self,
-                                             failedToPlayURL: self.mediaItem!.mediaURL,
-                                             forItemAtIndex: self.currentIndex)
-                    case .Unknown:
-                        debug("Status updated but not ready to play")
-                    }
-                case kLoadedTimeRangesKey:
-                    if let availableDuration = self.availableDurationForCurrentItem() {
-                        let duration = self.currentPlayerItem!.duration
-                        let totalDuration = CMTimeGetSeconds(duration)
-                        self.delegate?.twist(self, loaded: availableDuration, outOf: totalDuration)
-                    }
-                default:
-                    print("Unhandled key :\(keyPath)")
-                }
-            }
-        } else {
-            super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
-        }
-    }
-    
-    func availableDurationForCurrentItem() -> NSTimeInterval? {
-        guard let currentItem = self.currentPlayerItem else { return nil }
-        let loadedTimeRanges = currentItem.loadedTimeRanges
-        if let timeRange = loadedTimeRanges.first?.CMTimeRangeValue {
-            let startSeconds = CMTimeGetSeconds(timeRange.start)
-            let durationSeconds = CMTimeGetSeconds(timeRange.duration)
-            return startSeconds + durationSeconds
-        }
-        return nil
-    }
-
-    func triggerPlaybackStateChanged() {
-        self.delegate?.twistStateChanged(self)
+    func changeState(newState: TwistState) {
+        self.delegate?.twist(self, willChangeStateFrom: currentState, to: newState)
+        self.currentState = newState
+        self.delegate?.twist(self, didChangeStateFrom: currentState, to: newState)
     }
 }

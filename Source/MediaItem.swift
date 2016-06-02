@@ -1,164 +1,113 @@
 //
-//  AVPlayerCaching.swift
+//  MediaItem.swift
 //  Twist
 //
-//  Created by Jais Cheema on 4/04/2016.
+//  Created by Jais Cheema on 3/06/2016.
 //  Copyright © 2016 Needle Apps. All rights reserved.
 //
 
-import Foundation
+import UIKit
 import AVFoundation
-import MobileCoreServices
 
-func replaceUrlScheme(url: NSURL, scheme: String) -> NSURL? {
-    let urlComponents = NSURLComponents(URL: url, resolvingAgainstBaseURL: false)
-    urlComponents?.scheme = scheme
-    return urlComponents?.URL
-}
+class MediaItem: NSObject {
+    let player: Twist
+    let itemURL: NSURL
+    let itemIndex: Int
 
-class MediaItem: NSObject, NSURLSessionDataDelegate, AVAssetResourceLoaderDelegate {
-    var pendingRequests = [AVAssetResourceLoadingRequest]()
-    var data: NSMutableData?
-    var response: NSURLResponse?
-    var session: NSURLSession!
-    var connection: NSURLSessionDataTask?
-    var successfulDownloadCallback: ((NSURL) -> Void)?
-    
-    let mediaURL:  NSURL
-    let cachePath: String?
-    let cachingEnabled: Bool
-    var _asset: AVURLAsset?
-    
-    init(mediaURL: NSURL, cachePath: String?, cachingEnabled: Bool?) {
-        self.mediaURL = mediaURL
-        self.cachePath = cachePath
-        self.cachingEnabled = cachingEnabled == nil ? false : cachingEnabled!
+    var avPlayerItem: AVPlayerItem?
+    var mediaResourceLoader: MediaItemResourceLoader?
+
+    init(player: Twist, itemURL: NSURL, itemIndex: Int) {
+        self.player = player
+        self.itemURL = itemURL
+        self.itemIndex = itemIndex
         super.init()
 
-        let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-        configuration.allowsCellularAccess = true
-        configuration.timeoutIntervalForRequest = 30
-        self.session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: NSOperationQueue.mainQueue())
+        self.setupResourceLoader()
+        self.setupObservers()
     }
-    
-    var asset: AVURLAsset {
-        if self._asset == nil {
-            self.configureAsset()
+
+    func cleanup() {
+        self.avPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
+        self.avPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
+        self.avPlayerItem = nil
+        self.mediaResourceLoader?.session.invalidateAndCancel()
+    }
+
+    func setupResourceLoader() {
+        self.mediaResourceLoader
+            = MediaItemResourceLoader(mediaURL: itemURL,
+                                      cachePath: player.dataSource?.twist(player, cacheFilePathForItemAtIndex: itemIndex),
+                                      cachingEnabled: player.dataSource?.twist(player, shouldCacheItemAtIndex: itemIndex))
+
+        self.mediaResourceLoader?.successfulDownloadCallback = { mediaItemURL in
+            self.player.delegate?.twist(self.player,
+                                        downloadedMedia: self.itemURL,
+                                        forItemAtIndex: self.itemIndex)
         }
-        return self._asset!
+
+        self.avPlayerItem = AVPlayerItem(asset: self.mediaResourceLoader!.asset)
     }
-    
-    var isCachingEnabled: Bool {
-        return self.cachingEnabled && self.cachePath != nil
+
+    func setupObservers() {
+        self.avPlayerItem!.addObserver(
+            self,
+            forKeyPath: kStatusKey,
+            options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
+            context: &myContext
+        )
+        self.avPlayerItem!.addObserver(
+            self,
+            forKeyPath: kLoadedTimeRangesKey,
+            options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
+            context: &myContext
+        )
     }
-    
-    var hasCachedFile: Bool {
-        guard let cachePath = self.cachePath else { return false }
-        let fileManager = NSFileManager.defaultManager()
-        return fileManager.fileExistsAtPath(cachePath)
-    }
-    
-    func configureAsset() {
-        if isCachingEnabled {
-            debug("Caching is enabled")
-            if hasCachedFile {
-                debug("Local cached file is available")
-                self._asset = AVURLAsset(URL: NSURL(fileURLWithPath: self.cachePath!), options: [:])
-            } else {
-                debug("Local cache file is not available")
-                let streamingURL = replaceUrlScheme(self.mediaURL, scheme: "streaming")!
-                self._asset = AVURLAsset(URL: streamingURL, options: [:])
-                self._asset!.resourceLoader.setDelegate(self, queue: dispatch_get_main_queue())
+
+    // MARK: Observer methods
+    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+        if context == &myContext {
+            if self.avPlayerItem != nil && object is AVPlayerItem {
+                guard let keyPath = keyPath else { return }
+                switch keyPath {
+                case kStatusKey:
+                    switch self.avPlayerItem!.status {
+                    case .ReadyToPlay:
+                        self.player.play()
+                        self.player.changeState(.Playing)
+                    case .Failed:
+                        debug("Failed to play current media item")
+                        self.player.delegate?.twist(self.player,
+                                                    failedToPlayURL: self.itemURL,
+                                                    forItemAtIndex: self.itemIndex)
+                    case .Unknown:
+                        debug("Status updated but not ready to play")
+                    }
+                case kLoadedTimeRangesKey:
+                    if let availableDuration = self.availableDurationForCurrentItem() {
+                        let duration = self.avPlayerItem!.duration
+                        let totalDuration = CMTimeGetSeconds(duration)
+                        self.player.delegate?.twist(self.player,
+                                                    loaded: availableDuration,
+                                                    outOf: totalDuration)
+                    }
+                default:
+                    print("Unhandled key :\(keyPath)")
+                }
             }
         } else {
-            debug("Caching is not enabled")
-            self._asset = AVURLAsset(URL: self.mediaURL, options: [:])
-        }
-        assert(self._asset != nil, "Asset should not be nil")
-    }
-
-    func URLSession(session: NSURLSession, dataTask: NSURLSessionDataTask, didReceiveResponse response: NSURLResponse, completionHandler: (NSURLSessionResponseDisposition) -> Void) {
-        debug("Received response")
-        self.data = NSMutableData()
-        self.response = response
-        self.processPendingRequests()
-        completionHandler(.Allow)
-    }
-
-    func URLSession(session: NSURLSession, dataTask: NSURLSessionDataTask, didReceiveData data: NSData) {
-        debug("Received data")
-        self.data?.appendData(data)
-        self.processPendingRequests()
-    }
-
-    func URLSession(session: NSURLSession, task: NSURLSessionTask, didCompleteWithError error: NSError?) {
-        if error != nil {
-            debug(error)
-        } else {
-            self.processPendingRequests()
-            debug("Writing data to local cached file: \(self.cachePath!)")
-            do {
-                try self.data?.writeToFile(self.cachePath!, options: NSDataWritingOptions.AtomicWrite)
-                self.successfulDownloadCallback?(mediaURL)
-            } catch {
-                debug("Unable to write to original file")
-            }
+            super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
         }
     }
 
-    func processPendingRequests() {
-        self.pendingRequests = self.pendingRequests.filter { loadingRequest in
-            self.fillInContentInformation(loadingRequest.contentInformationRequest)
-            if self.respondWithDataForRequest(loadingRequest.dataRequest) {
-                loadingRequest.finishLoading()
-                return false
-            }
-            return true
+    func availableDurationForCurrentItem() -> NSTimeInterval? {
+        guard let avPlayerItem = self.avPlayerItem else { return nil }
+        let loadedTimeRanges = avPlayerItem.loadedTimeRanges
+        if let timeRange = loadedTimeRanges.first?.CMTimeRangeValue {
+            let startSeconds = CMTimeGetSeconds(timeRange.start)
+            let durationSeconds = CMTimeGetSeconds(timeRange.duration)
+            return startSeconds + durationSeconds
         }
-    }
-    
-    func fillInContentInformation(contentInformationRequest: AVAssetResourceLoadingContentInformationRequest?) {
-        if(contentInformationRequest == nil || self.response == nil) {
-            return
-        }
-        let mimeType = self.response!.MIMEType!
-        guard let contentType = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, mimeType, nil)?.takeRetainedValue() else {
-            return
-        }
-        contentInformationRequest?.byteRangeAccessSupported = true
-        contentInformationRequest?.contentType   = contentType as String
-        contentInformationRequest?.contentLength = self.response!.expectedContentLength
-    }
-    
-    func respondWithDataForRequest(dataRequest: AVAssetResourceLoadingDataRequest?) -> Bool {
-        guard let dataRequest = dataRequest else { return false }
-        let startOffset = Int(dataRequest.currentOffset == 0 ? dataRequest.requestedOffset : dataRequest.currentOffset)
-
-        if self.data!.length < startOffset {
-            return false
-        }
-        
-        let unreadBytes = self.data!.length - startOffset
-        let numberOfBytesToRespondWith  = min(Int(dataRequest.requestedLength), unreadBytes)
-        dataRequest.respondWithData(self.data!.subdataWithRange(NSMakeRange(startOffset, numberOfBytesToRespondWith)))
-        
-        return self.data!.length >= startOffset + dataRequest.requestedLength
-    }
-    
-    func resourceLoader(resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
-        if self.connection == nil {
-            debug("Starting request to get media URL: \(self.mediaURL)")
-            let request = NSURLRequest(URL: replaceUrlScheme(loadingRequest.request.URL!, scheme: "http")!)
-            self.connection = session.dataTaskWithRequest(request)
-            self.connection?.resume()
-        }
-        
-        self.pendingRequests.append(loadingRequest)
-        
-        return true
-    }
-    
-    func resourceLoader(resourceLoader: AVAssetResourceLoader, didCancelLoadingRequest loadingRequest: AVAssetResourceLoadingRequest) {
-        self.pendingRequests = self.pendingRequests.filter { $0 != loadingRequest }
+        return nil
     }
 }
