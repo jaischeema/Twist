@@ -22,9 +22,17 @@ func debug(message: Any) {
 }
 
 public enum TwistRepeatMode: Int {
-    case None = 0
+    case All = 0
     case Single
-    case All
+    case None
+    
+    public var nextMode: TwistRepeatMode {
+        switch self {
+        case .All: return .Single
+        case .Single: return .None
+        case .None: return .All
+        }
+    }
 }
 
 public enum TwistState: Int {
@@ -37,28 +45,51 @@ public enum TwistState: Int {
 
 public class Twist: NSObject, AVAudioPlayerDelegate {
     public static let defaultPlayer = Twist()
-    
-    // MARK: Public Variables
-    public var repeatMode: TwistRepeatMode = .None
-    public var shuffle: Bool = false
     public var dataSource: TwistDataSource?
     public var delegate: TwistDelegate?
     
-    // MARK: Public getters, Private setters
     private(set) public var currentState = TwistState.Waiting
     private(set) public var currentPlayerItem: AVPlayerItem?
-    private(set) public var currentIndex: Int = 0 {
-        didSet { fetchCurrentItemInfo() }
+    
+    public var repeatMode: TwistRepeatMode {
+        get { return self.playerIndex.repeatMode }
+        set { self.playerIndex.repeatMode = newValue }
     }
-
+    
+    public var shuffle: Bool {
+        get { return self.playerIndex.shuffle }
+        set { self.playerIndex.shuffle = newValue }
+    }
+    
+    public var currentIndex: Int {
+        get { return self.playerIndex.currentIndex }
+        set {
+            self.playerIndex.currentIndex = newValue
+            fetchCurrentItemInfo()
+        }
+    }
+    
+    public var isPlayable: Bool { return self.playerIndex.totalItems > 0 }
+    public var hasNextItem: Bool { return self.nextIndex != nil }
+    public var hasPreviousItem: Bool { return self.previousIndex != nil }
+    
     // MARK: Private variables
+    
+    var playerIndex: PlayerIndex!
     var player: AVPlayer?
     var preConfigured: Bool = false
     var interruptedWhilePlaying: Bool = false
     var mediaItem: MediaItem?
     var periodicObserver: AnyObject?
     var currentItemInfo: [String: AnyObject]?
+    var nextIndex: Int? { return self.playerIndex.nextIndex }
+    var previousIndex: Int? { return self.playerIndex.previousIndex }
     
+    override init() {
+        super.init()
+        self.playerIndex = PlayerIndex(player: self)
+    }
+
     func fetchCurrentItemInfo() {
         let mediaInfo = self.dataSource!.twist(self, mediaInfoForItemAtIndex: self.currentIndex)
         self.currentItemInfo = [
@@ -72,19 +103,6 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     // MARK: Public API
-
-    public var hasNextItem: Bool {
-        return self.currentIndex < self.dataSource!.twistTotalItemsInQueue(self) - 1
-    }
-
-    public var hasPreviousItem: Bool {
-        return self.currentIndex != 0
-    }
-    
-    public var isPlayable: Bool {
-        guard let dataSource = self.dataSource else { return false }
-        return dataSource.twistTotalItemsInQueue(self) > 0
-    }
     
     public func play() {
         self.play(self.currentIndex)
@@ -161,12 +179,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     public func next() {
-        if !isPlayable { return }
+        guard isPlayable else { return }
+        guard let nextIndex = self.nextIndex else { return }
         
-        if hasNextItem {
-            self.cleanupCurrentItem()
-            self.play(self.currentIndex + 1)
-        }
+        self.cleanupCurrentItem()
+        self.play(nextIndex)
     }
     
     public func stop() {
@@ -192,13 +209,13 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     public func previous() {
-        if !isPlayable { return }
+        guard isPlayable else { return }
         
         if self.player != nil && CMTimeGetSeconds(self.player!.currentTime()) > 4.0 {
             self.seekCurrentItemTo(0.0)
-        } else if hasPreviousItem {
+        } else if let previousIndex = self.previousIndex {
             self.cleanupCurrentItem()
-            self.play(self.currentIndex - 1)
+            self.play(previousIndex)
         } else {
             self.seekCurrentItemTo(0.0)
         }

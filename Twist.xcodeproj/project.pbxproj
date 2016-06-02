@@ -17,6 +17,7 @@
 		20881FA41CB7A81500694063 /* TestMusicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20881FA31CB7A81500694063 /* TestMusicProvider.swift */; };
 		209D524E1C3FD0F8008708E7 /* TwistDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */; };
 		209D52501C3FD108008708E7 /* TwistDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 209D524F1C3FD108008708E7 /* TwistDelegate.swift */; };
+		20E5A6691D001088006B644F /* PlayerIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E5A6681D001088006B644F /* PlayerIndex.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +44,7 @@
 		20881FA31CB7A81500694063 /* TestMusicProvider.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestMusicProvider.swift; sourceTree = "<group>"; };
 		209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwistDataSource.swift; sourceTree = "<group>"; };
 		209D524F1C3FD108008708E7 /* TwistDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwistDelegate.swift; sourceTree = "<group>"; };
+		20E5A6681D001088006B644F /* PlayerIndex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlayerIndex.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +104,7 @@
 				209D524D1C3FD0F8008708E7 /* TwistDataSource.swift */,
 				209D524F1C3FD108008708E7 /* TwistDelegate.swift */,
 				206AABA61CB24E53006D22F5 /* MediaItem.swift */,
+				20E5A6681D001088006B644F /* PlayerIndex.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -227,6 +230,7 @@
 			files = (
 				209D52501C3FD108008708E7 /* TwistDelegate.swift in Sources */,
 				209D524E1C3FD0F8008708E7 /* TwistDataSource.swift in Sources */,
+				20E5A6691D001088006B644F /* PlayerIndex.swift in Sources */,
 				206AABA71CB24E53006D22F5 /* MediaItem.swift in Sources */,
 				2069F3FE1C3FADFC00233AFA /* Twist.swift in Sources */,
 			);
