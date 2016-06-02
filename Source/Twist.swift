@@ -337,11 +337,17 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                 guard let keyPath = keyPath else { return }
                 switch keyPath {
                 case kStatusKey:
-                    if self.currentPlayerItem!.status == .ReadyToPlay {
+                    switch self.currentPlayerItem!.status {
+                    case .ReadyToPlay:
                         self.player!.play()
                         self.currentState = .Playing
                         self.triggerPlaybackStateChanged()
-                    } else {
+                    case .Failed:
+                        debug("Failed to play current media item")
+                        self.delegate?.twist(self,
+                                             failedToPlayURL: self.mediaItem!.mediaURL,
+                                             forItemAtIndex: self.currentIndex)
+                    case .Unknown:
                         debug("Status updated but not ready to play")
                     }
                 case kLoadedTimeRangesKey:
@@ -369,7 +375,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         }
         return nil
     }
-    
+
     func triggerPlaybackStateChanged() {
         self.delegate?.twistStateChanged(self)
     }
