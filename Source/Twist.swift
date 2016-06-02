@@ -105,9 +105,14 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         if self.currentPlayerItem == nil {
             debug("Creating new AVPlayerItem")
             
-            self.dataSource?.twist(self, urlForItemAtIndex: index) { currentItemURL in
+            self.dataSource?.twist(self, urlForItemAtIndex: index) { (currentItemURL, error) in
+                if error != nil {
+                    self.next()
+                    return
+                }
+
                 self.mediaItem = MediaItem(
-                    mediaURL:       currentItemURL,
+                    mediaURL:       currentItemURL!,
                     cachePath:      self.dataSource?.twist(self, cacheFilePathForItemAtIndex: index),
                     cachingEnabled: self.dataSource?.twist(self, shouldCacheItemAtIndex: index)
                 )

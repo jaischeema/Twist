@@ -24,7 +24,7 @@ public struct TwistMediaInfo {
 
 public protocol TwistDataSource {
     func twistTotalItemsInQueue(twist: Twist) -> Int
-    func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL) -> Void)
+    func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL?, NSError?) -> Void)
     
     // Optional
     func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
