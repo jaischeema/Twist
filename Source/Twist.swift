@@ -11,10 +11,6 @@ import AVFoundation
 import MediaPlayer
 
 let debugging  = true
-var myContext  = 0
-let kStatusKey = "status"
-let kLoadedTimeRangesKey = "loadedTimeRanges"
-
 func debug(message: Any) {
     if debugging {
         print("Twist: \(message)")

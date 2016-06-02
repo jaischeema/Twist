@@ -6,8 +6,12 @@
 //  Copyright © 2016 Needle Apps. All rights reserved.
 //
 
-import UIKit
+import Foundation
 import AVFoundation
+
+var myContext  = 0
+let kStatusKey = "status"
+let kLoadedTimeRangesKey = "loadedTimeRanges"
 
 class MediaItem: NSObject {
     let player: Twist

@@ -8,20 +8,6 @@
 
 import Foundation
 
-public struct TwistMediaInfo {
-    let title: String
-    let artist: String
-    let album: String
-    var albumArt: UIImage?
-    
-    public init(title: String, artist: String, album: String, albumArt: UIImage? = nil) {
-        self.title    = title
-        self.artist   = artist
-        self.album    = album
-        self.albumArt = albumArt
-    }
-}
-
 public protocol TwistDataSource {
     func twistTotalItemsInQueue(twist: Twist) -> Int
     func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL?, NSError?) -> Void)
