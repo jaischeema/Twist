@@ -246,6 +246,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     func playerItemPlaybackStall(notification: NSNotification) {
         debug("playback stalled")
+        play()
     }
     
     func interruption(notification: NSNotification) {
