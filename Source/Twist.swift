@@ -104,16 +104,14 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     // MARK: Public API
     
-    public func play() {
-        self.play(self.currentIndex)
-    }
-    
-    public func play(index: Int) {
+    public func play(itemIndex: Int? = nil) {
+        let index = itemIndex ?? self.currentIndex
         if !isPlayable {
             debug("Player called but player not in playable state, doing nothing.")
             return
         }
-        
+
+
         if !preConfigured { self.configurePlayer() }
         
         if currentIndex != index {
@@ -220,12 +218,16 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         registerListener(#selector(Twist.interruption(_:)), notification: AVAudioSessionInterruptionNotification)
         registerListener(#selector(Twist.routeChange(_:)), notification: AVAudioSessionRouteChangeNotification)
     }
+
+    func playCurrentSong() {
+        self.play(self.currentIndex)
+    }
     
     func setupRemoteCommandTargets() {
         let commandCenter = MPRemoteCommandCenter.sharedCommandCenter()
         commandCenter.nextTrackCommand.addTarget(self, action: #selector(Twist.next))
         commandCenter.previousTrackCommand.addTarget(self, action: #selector(Twist.previous))
-        commandCenter.playCommand.addTarget(self, action: #selector(Twist.play(_:)))
+        commandCenter.playCommand.addTarget(self, action: #selector(Twist.playCurrentSong))
         commandCenter.pauseCommand.addTarget(self, action: #selector(Twist.pause))
         commandCenter.togglePlayPauseCommand.addTarget(self, action: #selector(Twist.togglePlayPause))
     }
