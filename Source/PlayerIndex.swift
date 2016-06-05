@@ -47,30 +47,32 @@ class PlayerIndex: NSObject {
             currentIndex = previousIndex
         }
     }
-    
-    var nextIndex: Int? {
-        guard repeatMode != .None else { return nil }
-        guard repeatMode != .Single else { return currentIndex }
-        
+
+    func nextIndex(ignoreRepeat: Bool = false) -> Int? {
+        if !ignoreRepeat && repeatMode == .Single {
+            return currentIndex
+        }
+
         self.maybeUpdateQueue()
 
         let currentQueuePosition = self.indexQueue.indexOf(self.currentIndex)!
         if currentQueuePosition >= self.cachedTotalItems - 1 {
-            return self.indexQueue.first
+            return repeatMode == .None ? nil : self.indexQueue.first
         } else {
             return self.indexQueue[currentQueuePosition + 1]
         }
     }
 
-    var previousIndex: Int? {
-        guard repeatMode != .None else { return nil }
-        guard repeatMode != .Single else { return currentIndex }
+    func previousIndex(ignoreRepeat: Bool = false) -> Int? {
+        if !ignoreRepeat && repeatMode == .Single {
+            return currentIndex
+        }
 
         self.maybeUpdateQueue()
         
         let currentQueuePosition = self.indexQueue.indexOf(self.currentIndex)!
         if currentQueuePosition <= 0 {
-            return self.indexQueue.last
+            return repeatMode == .None ? nil : self.indexQueue.last
         } else {
             return self.indexQueue[currentQueuePosition - 1]
         }

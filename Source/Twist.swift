@@ -82,8 +82,8 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     var currentItemInfo: [String: AnyObject]?
     var currentMediaItem: MediaItem?
 
-    var nextIndex: Int?     { return self.playerIndex.nextIndex }
-    var previousIndex: Int? { return self.playerIndex.previousIndex }
+    var nextIndex: Int?     { return self.playerIndex.nextIndex() }
+    var previousIndex: Int? { return self.playerIndex.previousIndex() }
 
     override init() {
         super.init()
@@ -120,6 +120,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         
         if self.currentPlayerItem == nil {
             debug("Creating new AVPlayerItem")
+            self.currentIndex = index
             
             self.dataSource?.twist(self, urlForItemAtIndex: index) { (currentItemURL, error) in
                 guard error == nil else {
@@ -127,7 +128,6 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                     return
                 }
                 self.currentMediaItem = MediaItem(player: self, itemURL: currentItemURL!, itemIndex: index)
-                self.currentIndex = index
                 self.player = AVPlayer(playerItem: self.currentPlayerItem!)
                 self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 10),
                                                                                         queue: dispatch_get_main_queue(),
@@ -153,23 +153,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             self.changeState(.Paused)
         }
     }
-    
-    public func next() {
-        guard isPlayable else { return }
-        guard let nextIndex = self.nextIndex else { return }
-        
-        self.cleanupCurrentItem()
-        self.play(nextIndex)
-    }
-    
-    public func stop() {
-        if (self.player != nil) {
-            debug("Stopping current item")
-            self.cleanupCurrentItem()
-            self.changeState(.Waiting)
-        }
-    }
-    
+
     public func togglePlayPause() {
         if self.currentState == .Playing {
             self.pause()
@@ -178,22 +162,38 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    public func seekCurrentItemTo(position: Double) {
-        let time = CMTimeMakeWithSeconds(position, Int32(NSEC_PER_SEC))
-        self.player?.seekToTime(time, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
+    public func stop() {
+        if (self.player != nil) {
+            debug("Stopping current item")
+            self.cleanupCurrentItem()
+            self.changeState(.Waiting)
+        }
     }
-    
-    public func previous() {
+
+    public func next(ignoreRepeat: Bool = true) {
+        guard isPlayable else { return }
+        guard let nextIndex = self.playerIndex.nextIndex(ignoreRepeat) else { return }
+        
+        self.cleanupCurrentItem()
+        self.play(nextIndex)
+    }
+
+    public func previous(ignoreRepeat: Bool = true) {
         guard isPlayable else { return }
         
         if self.player != nil && CMTimeGetSeconds(self.player!.currentTime()) > 4.0 {
             self.seekCurrentItemTo(0.0)
-        } else if let previousIndex = self.previousIndex {
+        } else if let previousIndex = self.playerIndex.previousIndex(ignoreRepeat) {
             self.cleanupCurrentItem()
             self.play(previousIndex)
         } else {
             self.seekCurrentItemTo(0.0)
         }
+    }
+
+    public func seekCurrentItemTo(position: Double) {
+        let time = CMTimeMakeWithSeconds(position, Int32(NSEC_PER_SEC))
+        self.player?.seekToTime(time, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
     }
     
     // MARK: Listeners and events setup
@@ -233,7 +233,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func playerItemDidReachEnd(notification: NSNotification) {
-        self.next()
+        self.next(false)
     }
     
     func playerItemFailedToPlayEndTime(notification: NSNotification) {
