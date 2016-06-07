@@ -37,6 +37,7 @@ public enum TwistState: Int {
     case Ready
     case Playing
     case Paused
+    case Failed
 }
 
 public class Twist: NSObject, AVAudioPlayerDelegate {
@@ -111,7 +112,6 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             return
         }
 
-
         if !preConfigured { self.configurePlayer() }
         
         if currentIndex != index {
@@ -134,8 +134,8 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                                                                                         usingBlock: { (_) in
                     self.updatedPlayerTiming()
                 })
-
                 self.delegate?.twist(self, startedPlayingItemAtIndex: self.currentIndex)
+                self.changeState(.Buffering)
             }
         } else {
             debug("Playing current Item")
@@ -231,7 +231,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         commandCenter.pauseCommand.addTarget(self, action: #selector(Twist.pause))
         commandCenter.togglePlayPauseCommand.addTarget(self, action: #selector(Twist.togglePlayPause))
     }
-    
+
     func playerItemDidReachEnd(notification: NSNotification) {
         self.next(false)
     }
@@ -241,8 +241,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func playerItemPlaybackStall(notification: NSNotification) {
-        debug("playback stalled")
-        play()
+        self.changeState(.Buffering)
     }
     
     func interruption(notification: NSNotification) {
@@ -325,6 +324,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
 
     func changeState(newState: TwistState) {
         self.delegate?.twist(self, willChangeStateFrom: currentState, to: newState)
+        debug("Changing from \(currentState) => \(newState)")
         self.currentState = newState
         self.delegate?.twist(self, didChangeStateFrom: currentState, to: newState)
     }
