@@ -129,7 +129,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
             self.cleanupCurrentItem()
         }
         
-        if self.currentPlayerItem == nil {
+        if self.currentMediaItem == nil {
             debug("Creating new AVPlayerItem")
             self.currentIndex = index
             
