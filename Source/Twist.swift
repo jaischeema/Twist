@@ -104,6 +104,17 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     // MARK: Public API
+    public func removedItem(index: Int) {
+        self.playerIndex.removedItem(index)
+    }
+
+    public func addedItem(index: Int) {
+        self.playerIndex.addedItem(index)
+    }
+    
+    public func movedItem(previousIndex: Int, to newIndex: Int) {
+        self.playerIndex.movedItem(previousIndex, to: newIndex)
+    }
     
     public func play(itemIndex: Int? = nil) {
         let index = itemIndex ?? self.currentIndex

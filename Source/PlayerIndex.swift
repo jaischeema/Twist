@@ -33,14 +33,21 @@ class PlayerIndex: NSObject {
         return dataSource.twistTotalItemsInQueue(player)
     }
     
-    func itemRemovedAtIndex(index: Int) {
-        if currentIndex < index {
+    func removedItem(index: Int) {
+        if currentIndex > index {
             currentIndex -= 1
-            self.maybeUpdateQueue(true)
         }
+        self.maybeUpdateQueue()
+    }
+
+    func addedItem(index: Int) {
+        if index <= currentIndex {
+            currentIndex += 1
+        }
+        self.maybeUpdateQueue()
     }
     
-    func movedItem(previousIndex: Int, toIndex newIndex: Int) {
+    func movedItem(previousIndex: Int, to newIndex: Int) {
         if currentIndex == previousIndex {
             currentIndex = newIndex
         } else if currentIndex == newIndex {
