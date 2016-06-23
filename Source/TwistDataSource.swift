@@ -16,6 +16,7 @@ public protocol TwistDataSource {
     func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
     func twist(twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String
     func twist(twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo
+    func twistPreferredNextItemIndex(twist: Twist) -> Int?
 }
 
 public extension TwistDataSource {
@@ -29,5 +30,9 @@ public extension TwistDataSource {
     
     func twist(twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo {
         return TwistMediaInfo(title: "", artist: "", album: "")
+    }
+
+    func twistPreferredNextItemIndex(twist: Twist) -> Int? {
+        return nil
     }
 }

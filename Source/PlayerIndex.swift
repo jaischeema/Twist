@@ -60,6 +60,10 @@ class PlayerIndex: NSObject {
             return currentIndex
         }
 
+        if let preferredNextIndex = self.player.dataSource?.twistPreferredNextItemIndex(self.player) {
+            return preferredNextIndex
+        }
+
         self.maybeUpdateQueue()
 
         let currentQueuePosition = self.indexQueue.indexOf(self.currentIndex)!
