@@ -12,7 +12,7 @@ import AVFoundation
 var myContext  = 0
 let kStatusKey              = "status"
 let kLoadedTimeRangesKey    = "loadedTimeRanges"
-let KPlaybackBufferEmptyKey = "playbackBufferEmpty"
+let kPlaybackBufferEmptyKey = "playbackBufferEmpty"
 let kPlaybackLikelyToKeepUp = "playbackLikelyToKeepUp"
 
 class MediaItem: NSObject {
@@ -37,7 +37,7 @@ class MediaItem: NSObject {
         self.avPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
         self.avPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
         self.avPlayerItem?.removeObserver(self, forKeyPath: kPlaybackLikelyToKeepUp)
-        self.avPlayerItem?.removeObserver(self, forKeyPath: KPlaybackBufferEmptyKey)
+        self.avPlayerItem?.removeObserver(self, forKeyPath: kPlaybackBufferEmptyKey)
         self.avPlayerItem = nil
         self.mediaResourceLoader?.session.invalidateAndCancel()
     }
@@ -71,7 +71,7 @@ class MediaItem: NSObject {
             context: &myContext
         )
         self.avPlayerItem!.addObserver(self,
-                                       forKeyPath: KPlaybackBufferEmptyKey,
+                                       forKeyPath: kPlaybackBufferEmptyKey,
                                        options: NSKeyValueObservingOptions.New,
                                        context: &myContext)
         self.avPlayerItem!.addObserver(self,
@@ -108,7 +108,7 @@ class MediaItem: NSObject {
                                                     loaded: availableDuration,
                                                     outOf: totalDuration)
                     }
-                case KPlaybackBufferEmptyKey:
+                case kPlaybackBufferEmptyKey:
                     if playerItem.playbackBufferEmpty {
                         self.player.changeState(.Buffering)
                     }
