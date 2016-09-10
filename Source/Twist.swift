@@ -40,7 +40,7 @@ public enum TwistState: Int {
     case failed
 }
 
-open class Twist: NSObject, AVAudioPlayerDelegate {
+public final class Twist: NSObject, AVAudioPlayerDelegate {
     open static let defaultPlayer = Twist()
     open var dataSource: TwistDataSource?
     open var delegate: TwistDelegate?
@@ -216,18 +216,24 @@ open class Twist: NSObject, AVAudioPlayerDelegate {
         self.setupRemoteCommandTargets()
     }
     
-    func registerListener(_ selector: Selector, notification: String) {
-        NotificationCenter.default.addObserver(
-            self, selector: selector, name: NSNotification.Name(rawValue: notification), object: nil
-        )
+    func registerListener(selector: Selector, notification: Notification.Name) {
+        NotificationCenter.default.addObserver(self,
+                                               selector: selector,
+                                               name: notification,
+                                               object: nil)
     }
     
     func registerListeners() {
-        registerListener(#selector(Twist.playerItemDidReachEnd(_:)), notification: NSNotification.Name.AVPlayerItemDidPlayToEndTime.rawValue)
-        registerListener(#selector(Twist.playerItemFailedToPlayEndTime(_:)), notification: NSNotification.Name.AVPlayerItemFailedToPlayToEndTime.rawValue)
-        registerListener(#selector(Twist.playerItemPlaybackStall(_:)), notification: NSNotification.Name.AVPlayerItemPlaybackStalled.rawValue)
-        registerListener(#selector(Twist.interruption(_:)), notification: NSNotification.Name.AVAudioSessionInterruption.rawValue)
-        registerListener(#selector(Twist.routeChange(_:)), notification: NSNotification.Name.AVAudioSessionRouteChange.rawValue)
+        registerListener(selector: #selector(playerItemDidReachEnd(_:)),
+                         notification: .AVPlayerItemDidPlayToEndTime)
+        registerListener(selector: #selector(playerItemFailedToPlayEndTime(_:)),
+                         notification: .AVPlayerItemFailedToPlayToEndTime)
+        registerListener(selector: #selector(playerItemPlaybackStall(_:)),
+                         notification: .AVPlayerItemPlaybackStalled)
+        registerListener(selector: #selector(interruption(_:)),
+                         notification: .AVAudioSessionInterruption)
+        registerListener(selector: #selector(routeChange(_:)),
+                         notification: .AVAudioSessionRouteChange)
     }
 
     func playCurrentSong() {
@@ -236,11 +242,11 @@ open class Twist: NSObject, AVAudioPlayerDelegate {
     
     func setupRemoteCommandTargets() {
         let commandCenter = MPRemoteCommandCenter.shared()
-        commandCenter.nextTrackCommand.addTarget(self, action: #selector(Twist.next))
-        commandCenter.previousTrackCommand.addTarget(self, action: #selector(Twist.previous))
-        commandCenter.playCommand.addTarget(self, action: #selector(Twist.playCurrentSong))
-        commandCenter.pauseCommand.addTarget(self, action: #selector(Twist.pause))
-        commandCenter.togglePlayPauseCommand.addTarget(self, action: #selector(Twist.togglePlayPause))
+        commandCenter.nextTrackCommand.addTarget(self, action: #selector(next))
+        commandCenter.previousTrackCommand.addTarget(self, action: #selector(previous))
+        commandCenter.playCommand.addTarget(self, action: #selector(playCurrentSong))
+        commandCenter.pauseCommand.addTarget(self, action: #selector(pause))
+        commandCenter.togglePlayPauseCommand.addTarget(self, action: #selector(togglePlayPause))
     }
 
     func playerItemDidReachEnd(_ notification: Notification) {

@@ -20,7 +20,7 @@ class MediaItemResourceLoader: NSObject, URLSessionDataDelegate, AVAssetResource
     var pendingRequests = [AVAssetResourceLoadingRequest]()
     var data: NSMutableData?
     var response: URLResponse?
-    var session: Foundation.URLSession!
+    var session: URLSession!
     var connection: URLSessionDataTask?
     var successfulDownloadCallback: ((URL) -> Void)?
     
@@ -38,7 +38,7 @@ class MediaItemResourceLoader: NSObject, URLSessionDataDelegate, AVAssetResource
         let configuration = URLSessionConfiguration.default
         configuration.allowsCellularAccess = true
         configuration.timeoutIntervalForRequest = 30
-        self.session = Foundation.URLSession(configuration: configuration, delegate: self, delegateQueue: OperationQueue.main)
+        self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: OperationQueue.main)
     }
     
     var asset: AVURLAsset {
@@ -144,7 +144,8 @@ class MediaItemResourceLoader: NSObject, URLSessionDataDelegate, AVAssetResource
         
         return self.data!.length >= startOffset + dataRequest.requestedLength
     }
-    
+
+
     func resourceLoader(_ resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
         if self.connection == nil {
             debug("Starting request to get media URL: \(self.mediaURL)")
