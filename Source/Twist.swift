@@ -11,53 +11,53 @@ import AVFoundation
 import MediaPlayer
 
 let debugging  = true
-func debug(message: Any) {
+func debug(_ message: Any) {
     if debugging {
         print("Twist: \(message)")
     }
 }
 
 public enum TwistRepeatMode: Int {
-    case All = 0
-    case Single
-    case None
+    case all = 0
+    case single
+    case none
     
     public var nextMode: TwistRepeatMode {
         switch self {
-        case .All: return .Single
-        case .Single: return .None
-        case .None: return .All
+        case .all: return .single
+        case .single: return .none
+        case .none: return .all
         }
     }
 }
 
 public enum TwistState: Int {
-    case Waiting = 0
-    case Buffering
-    case Ready
-    case Playing
-    case Paused
-    case Failed
+    case waiting = 0
+    case buffering
+    case ready
+    case playing
+    case paused
+    case failed
 }
 
-public class Twist: NSObject, AVAudioPlayerDelegate {
-    public static let defaultPlayer = Twist()
-    public var dataSource: TwistDataSource?
-    public var delegate: TwistDelegate?
+open class Twist: NSObject, AVAudioPlayerDelegate {
+    open static let defaultPlayer = Twist()
+    open var dataSource: TwistDataSource?
+    open var delegate: TwistDelegate?
     
-    private(set) public var currentState = TwistState.Waiting
+    fileprivate(set) open var currentState = TwistState.waiting
 
-    public var repeatMode: TwistRepeatMode {
+    open var repeatMode: TwistRepeatMode {
         get { return self.playerIndex.repeatMode }
         set { self.playerIndex.repeatMode = newValue }
     }
     
-    public var shuffle: Bool {
+    open var shuffle: Bool {
         get { return self.playerIndex.shuffle }
         set { self.playerIndex.shuffle = newValue }
     }
     
-    public var currentIndex: Int {
+    open var currentIndex: Int {
         get { return self.playerIndex.currentIndex }
         set {
             self.playerIndex.currentIndex = newValue
@@ -65,13 +65,13 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    public var currentPlayerItem: AVPlayerItem? {
+    open var currentPlayerItem: AVPlayerItem? {
         return currentMediaItem?.avPlayerItem
     }
     
-    public var isPlayable: Bool { return self.playerIndex.totalItems > 0 }
-    public var hasNextItem: Bool { return self.nextIndex != nil }
-    public var hasPreviousItem: Bool { return self.previousIndex != nil }
+    open var isPlayable: Bool { return self.playerIndex.totalItems > 0 }
+    open var hasNextItem: Bool { return self.nextIndex != nil }
+    open var hasPreviousItem: Bool { return self.previousIndex != nil }
     
     // MARK: Private variables
     
@@ -94,9 +94,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     func fetchCurrentItemInfo() {
         let mediaInfo = self.dataSource!.twist(self, mediaInfoForItemAtIndex: self.currentIndex)
         self.currentItemInfo = [
-            MPMediaItemPropertyAlbumTitle:  mediaInfo.album,
-            MPMediaItemPropertyArtist:      mediaInfo.artist,
-            MPMediaItemPropertyTitle:       mediaInfo.title,
+            MPMediaItemPropertyAlbumTitle:  mediaInfo.album as AnyObject,
+            MPMediaItemPropertyArtist:      mediaInfo.artist as AnyObject,
+            MPMediaItemPropertyTitle:       mediaInfo.title as AnyObject,
         ]
         if let albumArt = mediaInfo.albumArt {
             self.currentItemInfo![MPMediaItemPropertyArtwork] = MPMediaItemArtwork(image: albumArt)
@@ -104,19 +104,19 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     // MARK: Public API
-    public func removedItem(index: Int) {
+    open func removedItem(_ index: Int) {
         self.playerIndex.removedItem(index)
     }
 
-    public func addedItem(index: Int) {
+    open func addedItem(_ index: Int) {
         self.playerIndex.addedItem(index)
     }
     
-    public func movedItem(previousIndex: Int, to newIndex: Int) {
+    open func movedItem(_ previousIndex: Int, to newIndex: Int) {
         self.playerIndex.movedItem(previousIndex, to: newIndex)
     }
     
-    public func play(itemIndex: Int? = nil) {
+    open func play(_ itemIndex: Int? = nil) {
         let index = itemIndex ?? self.currentIndex
         if !isPlayable {
             debug("Player called but player not in playable state, doing nothing.")
@@ -140,48 +140,48 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
                 }
                 self.currentMediaItem = MediaItem(player: self, itemURL: currentItemURL!, itemIndex: index)
                 self.player = AVPlayer(playerItem: self.currentPlayerItem!)
-                self.periodicObserver = self.player?.addPeriodicTimeObserverForInterval(CMTimeMake(1, 10),
-                                                                                        queue: dispatch_get_main_queue(),
-                                                                                        usingBlock: { (_) in
+                self.periodicObserver = self.player?.addPeriodicTimeObserver(forInterval: CMTimeMake(1, 10),
+                                                                                        queue: DispatchQueue.main,
+                                                                                        using: { (_) in
                     self.updatedPlayerTiming()
-                })
+                }) as AnyObject?
                 self.delegate?.twist(self, startedPlayingItemAtIndex: self.currentIndex)
-                self.changeState(.Buffering)
+                self.changeState(.buffering)
             }
         } else {
             debug("Playing current Item")
             self.player!.play()
-            self.changeState(.Playing)
+            self.changeState(.playing)
         }
     }
     
-    public func pause() {
+    open func pause() {
         if !isPlayable { return }
         
-        if self.currentState == .Playing {
+        if self.currentState == .playing {
             debug("Pausing current item")
             self.player?.pause()
-            self.changeState(.Paused)
+            self.changeState(.paused)
         }
     }
 
-    public func togglePlayPause() {
-        if self.currentState == .Playing {
+    open func togglePlayPause() {
+        if self.currentState == .playing {
             self.pause()
         } else {
             self.play()
         }
     }
 
-    public func stop() {
+    open func stop() {
         if (self.player != nil) {
             debug("Stopping current item")
             self.cleanupCurrentItem()
-            self.changeState(.Waiting)
+            self.changeState(.waiting)
         }
     }
 
-    public func next(ignoreRepeat: Bool = true) {
+    open func next(_ ignoreRepeat: Bool = true) {
         guard isPlayable else { return }
         guard let nextIndex = self.playerIndex.nextIndex(ignoreRepeat) else { return }
         
@@ -189,7 +189,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.play(nextIndex)
     }
 
-    public func previous(ignoreRepeat: Bool = true) {
+    open func previous(_ ignoreRepeat: Bool = true) {
         guard isPlayable else { return }
         
         if self.player != nil && CMTimeGetSeconds(self.player!.currentTime()) > 4.0 {
@@ -202,9 +202,9 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    public func seekCurrentItemTo(position: Double) {
+    open func seekCurrentItemTo(_ position: Double) {
         let time = CMTimeMakeWithSeconds(position, Int32(NSEC_PER_SEC))
-        self.player?.seekToTime(time, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
+        self.player?.seek(to: time, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
     }
     
     // MARK: Listeners and events setup
@@ -216,18 +216,18 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.setupRemoteCommandTargets()
     }
     
-    func registerListener(selector: Selector, notification: String) {
-        NSNotificationCenter.defaultCenter().addObserver(
-            self, selector: selector, name: notification, object: nil
+    func registerListener(_ selector: Selector, notification: String) {
+        NotificationCenter.default.addObserver(
+            self, selector: selector, name: NSNotification.Name(rawValue: notification), object: nil
         )
     }
     
     func registerListeners() {
-        registerListener(#selector(Twist.playerItemDidReachEnd(_:)), notification: AVPlayerItemDidPlayToEndTimeNotification)
-        registerListener(#selector(Twist.playerItemFailedToPlayEndTime(_:)), notification: AVPlayerItemFailedToPlayToEndTimeNotification)
-        registerListener(#selector(Twist.playerItemPlaybackStall(_:)), notification: AVPlayerItemPlaybackStalledNotification)
-        registerListener(#selector(Twist.interruption(_:)), notification: AVAudioSessionInterruptionNotification)
-        registerListener(#selector(Twist.routeChange(_:)), notification: AVAudioSessionRouteChangeNotification)
+        registerListener(#selector(Twist.playerItemDidReachEnd(_:)), notification: NSNotification.Name.AVPlayerItemDidPlayToEndTime.rawValue)
+        registerListener(#selector(Twist.playerItemFailedToPlayEndTime(_:)), notification: NSNotification.Name.AVPlayerItemFailedToPlayToEndTime.rawValue)
+        registerListener(#selector(Twist.playerItemPlaybackStall(_:)), notification: NSNotification.Name.AVPlayerItemPlaybackStalled.rawValue)
+        registerListener(#selector(Twist.interruption(_:)), notification: NSNotification.Name.AVAudioSessionInterruption.rawValue)
+        registerListener(#selector(Twist.routeChange(_:)), notification: NSNotification.Name.AVAudioSessionRouteChange.rawValue)
     }
 
     func playCurrentSong() {
@@ -235,7 +235,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     }
     
     func setupRemoteCommandTargets() {
-        let commandCenter = MPRemoteCommandCenter.sharedCommandCenter()
+        let commandCenter = MPRemoteCommandCenter.shared()
         commandCenter.nextTrackCommand.addTarget(self, action: #selector(Twist.next))
         commandCenter.previousTrackCommand.addTarget(self, action: #selector(Twist.previous))
         commandCenter.playCommand.addTarget(self, action: #selector(Twist.playCurrentSong))
@@ -243,26 +243,26 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         commandCenter.togglePlayPauseCommand.addTarget(self, action: #selector(Twist.togglePlayPause))
     }
 
-    func playerItemDidReachEnd(notification: NSNotification) {
+    func playerItemDidReachEnd(_ notification: Notification) {
         self.next(false)
     }
     
-    func playerItemFailedToPlayEndTime(notification: NSNotification) {
+    func playerItemFailedToPlayEndTime(_ notification: Notification) {
         self.next()
     }
     
-    func playerItemPlaybackStall(notification: NSNotification) {
-        self.changeState(.Buffering)
+    func playerItemPlaybackStall(_ notification: Notification) {
+        self.changeState(.buffering)
     }
     
-    func interruption(notification: NSNotification) {
-        if  let notificationType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+    func interruption(_ notification: Notification) {
+        if  let notificationType = (notification as NSNotification).userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
             let interruptionType = AVAudioSessionInterruptionType(rawValue: notificationType) {
             switch interruptionType {
-            case .Began:
-                self.interruptedWhilePlaying = (self.currentState == .Playing)
+            case .began:
+                self.interruptedWhilePlaying = (self.currentState == .playing)
                 self.pause()
-            case .Ended:
+            case .ended:
                 if self.interruptedWhilePlaying {
                     self.interruptedWhilePlaying = false
                     self.play()
@@ -271,11 +271,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         }
     }
     
-    func routeChange(notification: NSNotification) {
-        if  let notificationType = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+    func routeChange(_ notification: Notification) {
+        if  let notificationType = (notification as NSNotification).userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
             let reason = AVAudioSessionRouteChangeReason(rawValue: notificationType) {
             switch reason {
-            case .OldDeviceUnavailable:
+            case .oldDeviceUnavailable:
                 self.pause()
                 debug("Route changed and paused")
             default:
@@ -286,11 +286,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
     
     func registerAudioSession() {
         let audioSession = AVAudioSession.sharedInstance()
-        UIApplication.sharedApplication().beginReceivingRemoteControlEvents()
+        UIApplication.shared.beginReceivingRemoteControlEvents()
         
         if audioSession.category != AVAudioSessionCategoryPlayback {
-            let device = UIDevice.currentDevice()
-            if device.multitaskingSupported {
+            let device = UIDevice.current
+            if device.isMultitaskingSupported {
                 do {
                     try audioSession.setCategory(AVAudioSessionCategoryPlayback)
                 } catch let error as NSError {
@@ -317,11 +317,11 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.player = nil
     }
     
-    func updateNowPlayingInfo(currentTime: Double, totalDuration: Double) {
+    func updateNowPlayingInfo(_ currentTime: Double, totalDuration: Double) {
         if var currentItemInfo = self.currentItemInfo {
-            let defaultCenter = MPNowPlayingInfoCenter.defaultCenter()
-            currentItemInfo[MPMediaItemPropertyPlaybackDuration] = NSNumber(double: totalDuration)
-            currentItemInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(double: currentTime)
+            let defaultCenter = MPNowPlayingInfoCenter.default()
+            currentItemInfo[MPMediaItemPropertyPlaybackDuration] = NSNumber(value: totalDuration as Double)
+            currentItemInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(value: currentTime as Double)
             defaultCenter.nowPlayingInfo = currentItemInfo
         }
     }
@@ -333,7 +333,7 @@ public class Twist: NSObject, AVAudioPlayerDelegate {
         self.delegate?.twist(self, playedTo: currentTime, outOf: totalDuration)
     }
 
-    func changeState(newState: TwistState) {
+    func changeState(_ newState: TwistState) {
         self.delegate?.twist(self, willChangeStateFrom: currentState, to: newState)
         debug("Changing from \(currentState) => \(newState)")
         self.currentState = newState

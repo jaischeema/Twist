@@ -17,13 +17,13 @@ let kPlaybackLikelyToKeepUp = "playbackLikelyToKeepUp"
 
 class MediaItem: NSObject {
     let player: Twist
-    let itemURL: NSURL
+    let itemURL: URL
     let itemIndex: Int
 
     var avPlayerItem: AVPlayerItem?
     var mediaResourceLoader: MediaItemResourceLoader?
 
-    init(player: Twist, itemURL: NSURL, itemIndex: Int) {
+    init(player: Twist, itemURL: URL, itemIndex: Int) {
         self.player = player
         self.itemURL = itemURL
         self.itemIndex = itemIndex
@@ -61,43 +61,43 @@ class MediaItem: NSObject {
         self.avPlayerItem!.addObserver(
             self,
             forKeyPath: kStatusKey,
-            options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
+            options: NSKeyValueObservingOptions.new.union(NSKeyValueObservingOptions.initial),
             context: &myContext
         )
         self.avPlayerItem!.addObserver(
             self,
             forKeyPath: kLoadedTimeRangesKey,
-            options: NSKeyValueObservingOptions.New.union(NSKeyValueObservingOptions.Initial),
+            options: NSKeyValueObservingOptions.new.union(NSKeyValueObservingOptions.initial),
             context: &myContext
         )
         self.avPlayerItem!.addObserver(self,
                                        forKeyPath: kPlaybackBufferEmptyKey,
-                                       options: NSKeyValueObservingOptions.New,
+                                       options: NSKeyValueObservingOptions.new,
                                        context: &myContext)
         self.avPlayerItem!.addObserver(self,
                                        forKeyPath: kPlaybackLikelyToKeepUp,
-                                       options: NSKeyValueObservingOptions.New,
+                                       options: NSKeyValueObservingOptions.new,
                                        context: &myContext)
     }
 
     // MARK: Observer methods
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if context == &myContext {
             if let playerItem = object as? AVPlayerItem {
                 guard let keyPath = keyPath else { return }
                 switch keyPath {
                 case kStatusKey:
                     switch playerItem.status {
-                    case .ReadyToPlay:
+                    case .readyToPlay:
                         self.player.play()
-                    case .Failed:
+                    case .failed:
                         debug("Failed to play current media item")
-                        self.player.changeState(TwistState.Failed)
+                        self.player.changeState(TwistState.failed)
                         self.player.cleanupCurrentItem()
                         self.player.delegate?.twist(self.player,
                                                     failedToPlayURL: self.itemURL,
                                                     forItemAtIndex: self.itemIndex)
-                    case .Unknown:
+                    case .unknown:
                         debug("Status updated but not ready to play")
                     }
                 case kLoadedTimeRangesKey:
@@ -109,11 +109,11 @@ class MediaItem: NSObject {
                                                     outOf: totalDuration)
                     }
                 case kPlaybackBufferEmptyKey:
-                    if playerItem.playbackBufferEmpty {
-                        self.player.changeState(.Buffering)
+                    if playerItem.isPlaybackBufferEmpty {
+                        self.player.changeState(.buffering)
                     }
                 case kPlaybackLikelyToKeepUp:
-                    if playerItem.playbackLikelyToKeepUp {
+                    if playerItem.isPlaybackLikelyToKeepUp {
                         self.player.play()
                     }
                 default:
@@ -121,14 +121,14 @@ class MediaItem: NSObject {
                 }
             }
         } else {
-            super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
         }
     }
 
-    func availableDurationForCurrentItem() -> NSTimeInterval? {
+    func availableDurationForCurrentItem() -> TimeInterval? {
         guard let avPlayerItem = self.avPlayerItem else { return nil }
         let loadedTimeRanges = avPlayerItem.loadedTimeRanges
-        if let timeRange = loadedTimeRanges.first?.CMTimeRangeValue {
+        if let timeRange = loadedTimeRanges.first?.timeRangeValue {
             let startSeconds = CMTimeGetSeconds(timeRange.start)
             let durationSeconds = CMTimeGetSeconds(timeRange.duration)
             return startSeconds + durationSeconds

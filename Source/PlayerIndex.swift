@@ -15,7 +15,7 @@ class PlayerIndex: NSObject {
     var cachedTotalItems : Int = 0
     var indexQueue = [Int]()
     
-    var repeatMode: TwistRepeatMode = .All
+    var repeatMode: TwistRepeatMode = .all
     var shuffle: Bool = false {
         didSet {
             if oldValue != shuffle {
@@ -33,21 +33,21 @@ class PlayerIndex: NSObject {
         return dataSource.twistTotalItemsInQueue(player)
     }
     
-    func removedItem(index: Int) {
+    func removedItem(_ index: Int) {
         if currentIndex > index {
             currentIndex -= 1
         }
         self.maybeUpdateQueue()
     }
 
-    func addedItem(index: Int) {
+    func addedItem(_ index: Int) {
         if index <= currentIndex {
             currentIndex += 1
         }
         self.maybeUpdateQueue()
     }
     
-    func movedItem(previousIndex: Int, to newIndex: Int) {
+    func movedItem(_ previousIndex: Int, to newIndex: Int) {
         if currentIndex == previousIndex {
             currentIndex = newIndex
         } else if currentIndex == newIndex {
@@ -55,8 +55,8 @@ class PlayerIndex: NSObject {
         }
     }
 
-    func nextIndex(ignoreRepeat: Bool = false) -> Int? {
-        if !ignoreRepeat && repeatMode == .Single {
+    func nextIndex(_ ignoreRepeat: Bool = false) -> Int? {
+        if !ignoreRepeat && repeatMode == .single {
             return currentIndex
         }
 
@@ -66,30 +66,30 @@ class PlayerIndex: NSObject {
 
         self.maybeUpdateQueue()
 
-        let currentQueuePosition = self.indexQueue.indexOf(self.currentIndex)!
+        let currentQueuePosition = self.indexQueue.index(of: self.currentIndex)!
         if currentQueuePosition >= self.cachedTotalItems - 1 {
-            return repeatMode == .None ? nil : self.indexQueue.first
+            return repeatMode == .none ? nil : self.indexQueue.first
         } else {
             return self.indexQueue[currentQueuePosition + 1]
         }
     }
 
-    func previousIndex(ignoreRepeat: Bool = false) -> Int? {
-        if !ignoreRepeat && repeatMode == .Single {
+    func previousIndex(_ ignoreRepeat: Bool = false) -> Int? {
+        if !ignoreRepeat && repeatMode == .single {
             return currentIndex
         }
 
         self.maybeUpdateQueue()
         
-        let currentQueuePosition = self.indexQueue.indexOf(self.currentIndex)!
+        let currentQueuePosition = self.indexQueue.index(of: self.currentIndex)!
         if currentQueuePosition <= 0 {
-            return repeatMode == .None ? nil : self.indexQueue.last
+            return repeatMode == .none ? nil : self.indexQueue.last
         } else {
             return self.indexQueue[currentQueuePosition - 1]
         }
     }
 
-    func maybeUpdateQueue(forced: Bool = false) {
+    func maybeUpdateQueue(_ forced: Bool = false) {
         if self.cachedTotalItems != totalItems || forced {
             self.cachedTotalItems = totalItems
             self.shuffle ? self.shuffleIndexes() : self.resetIndexes()
@@ -101,6 +101,6 @@ class PlayerIndex: NSObject {
     }
 
     func shuffleIndexes() {
-        self.indexQueue = Array(0..<cachedTotalItems).sort() {_, _ in arc4random() % 2 == 0 }
+        self.indexQueue = Array(0..<cachedTotalItems).sorted() {_, _ in arc4random() % 2 == 0 }
     }
 }

@@ -10,35 +10,35 @@ import Foundation
 import AVFoundation
 import MobileCoreServices
 
-func replaceUrlScheme(url: NSURL, scheme: String) -> NSURL? {
-    let urlComponents = NSURLComponents(URL: url, resolvingAgainstBaseURL: false)
+func replaceUrlScheme(_ url: URL, scheme: String) -> URL? {
+    var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
     urlComponents?.scheme = scheme
-    return urlComponents?.URL
+    return urlComponents?.url
 }
 
-class MediaItemResourceLoader: NSObject, NSURLSessionDataDelegate, AVAssetResourceLoaderDelegate {
+class MediaItemResourceLoader: NSObject, URLSessionDataDelegate, AVAssetResourceLoaderDelegate {
     var pendingRequests = [AVAssetResourceLoadingRequest]()
     var data: NSMutableData?
-    var response: NSURLResponse?
-    var session: NSURLSession!
-    var connection: NSURLSessionDataTask?
-    var successfulDownloadCallback: ((NSURL) -> Void)?
+    var response: URLResponse?
+    var session: Foundation.URLSession!
+    var connection: URLSessionDataTask?
+    var successfulDownloadCallback: ((URL) -> Void)?
     
-    let mediaURL:  NSURL
+    let mediaURL:  URL
     let cachePath: String?
     let cachingEnabled: Bool
     var _asset: AVURLAsset?
     
-    init(mediaURL: NSURL, cachePath: String?, cachingEnabled: Bool?) {
+    init(mediaURL: URL, cachePath: String?, cachingEnabled: Bool?) {
         self.mediaURL = mediaURL
         self.cachePath = cachePath
         self.cachingEnabled = cachingEnabled == nil ? false : cachingEnabled!
         super.init()
 
-        let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+        let configuration = URLSessionConfiguration.default
         configuration.allowsCellularAccess = true
         configuration.timeoutIntervalForRequest = 30
-        self.session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: NSOperationQueue.mainQueue())
+        self.session = Foundation.URLSession(configuration: configuration, delegate: self, delegateQueue: OperationQueue.main)
     }
     
     var asset: AVURLAsset {
@@ -54,8 +54,8 @@ class MediaItemResourceLoader: NSObject, NSURLSessionDataDelegate, AVAssetResour
     
     var hasCachedFile: Bool {
         guard let cachePath = self.cachePath else { return false }
-        let fileManager = NSFileManager.defaultManager()
-        return fileManager.fileExistsAtPath(cachePath)
+        let fileManager = FileManager.default
+        return fileManager.fileExists(atPath: cachePath)
     }
     
     func configureAsset() {
@@ -63,42 +63,42 @@ class MediaItemResourceLoader: NSObject, NSURLSessionDataDelegate, AVAssetResour
             debug("Caching is enabled")
             if hasCachedFile {
                 debug("Local cached file is available")
-                self._asset = AVURLAsset(URL: NSURL(fileURLWithPath: self.cachePath!), options: [:])
+                self._asset = AVURLAsset(url: URL(fileURLWithPath: self.cachePath!), options: [:])
             } else {
                 debug("Local cache file is not available")
                 let streamingURL = replaceUrlScheme(self.mediaURL, scheme: "streaming")!
-                self._asset = AVURLAsset(URL: streamingURL, options: [:])
-                self._asset!.resourceLoader.setDelegate(self, queue: dispatch_get_main_queue())
+                self._asset = AVURLAsset(url: streamingURL, options: [:])
+                self._asset!.resourceLoader.setDelegate(self, queue: DispatchQueue.main)
             }
         } else {
             debug("Caching is not enabled")
-            self._asset = AVURLAsset(URL: self.mediaURL, options: [:])
+            self._asset = AVURLAsset(url: self.mediaURL, options: [:])
         }
         assert(self._asset != nil, "Asset should not be nil")
     }
 
-    func URLSession(session: NSURLSession, dataTask: NSURLSessionDataTask, didReceiveResponse response: NSURLResponse, completionHandler: (NSURLSessionResponseDisposition) -> Void) {
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         debug("Received response")
         self.data = NSMutableData()
         self.response = response
         self.processPendingRequests()
-        completionHandler(.Allow)
+        completionHandler(.allow)
     }
 
-    func URLSession(session: NSURLSession, dataTask: NSURLSessionDataTask, didReceiveData data: NSData) {
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         print(".", terminator:"")
-        self.data?.appendData(data)
+        self.data?.append(data)
         self.processPendingRequests()
     }
 
-    func URLSession(session: NSURLSession, task: NSURLSessionTask, didCompleteWithError error: NSError?) {
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if error != nil {
             debug(error)
         } else {
             self.processPendingRequests()
             debug("Writing data to local cached file: \(self.cachePath!)")
             do {
-                try self.data?.writeToFile(self.cachePath!, options: NSDataWritingOptions.AtomicWrite)
+                try self.data?.write(toFile: self.cachePath!, options: NSData.WritingOptions.atomicWrite)
                 self.successfulDownloadCallback?(mediaURL)
             } catch {
                 debug("Unable to write to original file")
@@ -117,20 +117,20 @@ class MediaItemResourceLoader: NSObject, NSURLSessionDataDelegate, AVAssetResour
         }
     }
     
-    func fillInContentInformation(contentInformationRequest: AVAssetResourceLoadingContentInformationRequest?) {
+    func fillInContentInformation(_ contentInformationRequest: AVAssetResourceLoadingContentInformationRequest?) {
         if(contentInformationRequest == nil || self.response == nil) {
             return
         }
-        let mimeType = self.response!.MIMEType!
-        guard let contentType = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, mimeType, nil)?.takeRetainedValue() else {
+        let mimeType = self.response!.mimeType!
+        guard let contentType = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, mimeType as CFString, nil)?.takeRetainedValue() else {
             return
         }
-        contentInformationRequest?.byteRangeAccessSupported = true
+        contentInformationRequest?.isByteRangeAccessSupported = true
         contentInformationRequest?.contentType   = contentType as String
         contentInformationRequest?.contentLength = self.response!.expectedContentLength
     }
     
-    func respondWithDataForRequest(dataRequest: AVAssetResourceLoadingDataRequest?) -> Bool {
+    func respondWithDataForRequest(_ dataRequest: AVAssetResourceLoadingDataRequest?) -> Bool {
         guard let dataRequest = dataRequest else { return false }
         let startOffset = Int(dataRequest.currentOffset == 0 ? dataRequest.requestedOffset : dataRequest.currentOffset)
 
@@ -140,16 +140,16 @@ class MediaItemResourceLoader: NSObject, NSURLSessionDataDelegate, AVAssetResour
         
         let unreadBytes = self.data!.length - startOffset
         let numberOfBytesToRespondWith  = min(Int(dataRequest.requestedLength), unreadBytes)
-        dataRequest.respondWithData(self.data!.subdataWithRange(NSMakeRange(startOffset, numberOfBytesToRespondWith)))
+        dataRequest.respond(with: self.data!.subdata(with: NSMakeRange(startOffset, numberOfBytesToRespondWith)))
         
         return self.data!.length >= startOffset + dataRequest.requestedLength
     }
     
-    func resourceLoader(resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
+    func resourceLoader(_ resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
         if self.connection == nil {
             debug("Starting request to get media URL: \(self.mediaURL)")
-            let request = NSURLRequest(URL: replaceUrlScheme(loadingRequest.request.URL!, scheme: "http")!)
-            self.connection = session.dataTaskWithRequest(request)
+            let request = URLRequest(url: replaceUrlScheme(loadingRequest.request.url!, scheme: "http")!)
+            self.connection = session.dataTask(with: request)
             self.connection?.resume()
         }
         
@@ -158,7 +158,7 @@ class MediaItemResourceLoader: NSObject, NSURLSessionDataDelegate, AVAssetResour
         return true
     }
     
-    func resourceLoader(resourceLoader: AVAssetResourceLoader, didCancelLoadingRequest loadingRequest: AVAssetResourceLoadingRequest) {
+    func resourceLoader(_ resourceLoader: AVAssetResourceLoader, didCancel loadingRequest: AVAssetResourceLoadingRequest) {
         self.pendingRequests = self.pendingRequests.filter { $0 != loadingRequest }
     }
 }

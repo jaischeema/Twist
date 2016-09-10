@@ -9,30 +9,30 @@
 import Foundation
 
 public protocol TwistDataSource {
-    func twistTotalItemsInQueue(twist: Twist) -> Int
-    func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL?, NSError?) -> Void)
+    func twistTotalItemsInQueue(_ twist: Twist) -> Int
+    func twist(_ twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: @escaping (URL?, NSError?) -> Void)
     
     // Optional
-    func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
-    func twist(twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String
-    func twist(twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo
-    func twistPreferredNextItemIndex(twist: Twist) -> Int?
+    func twist(_ twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
+    func twist(_ twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String
+    func twist(_ twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo
+    func twistPreferredNextItemIndex(_ twist: Twist) -> Int?
 }
 
 public extension TwistDataSource {
-    func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool {
+    func twist(_ twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool {
         return false
     }
     
-    func twist(twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String {
+    func twist(_ twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String {
         return ""
     }
     
-    func twist(twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo {
+    func twist(_ twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo {
         return TwistMediaInfo(title: "", artist: "", album: "")
     }
 
-    func twistPreferredNextItemIndex(twist: Twist) -> Int? {
+    func twistPreferredNextItemIndex(_ twist: Twist) -> Int? {
         return nil
     }
 }

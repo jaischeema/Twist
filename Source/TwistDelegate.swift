@@ -10,24 +10,24 @@ import Foundation
 import AVFoundation
 
 public protocol TwistDelegate {
-    func twist(twist: Twist, loaded: NSTimeInterval, outOf totalDuration: NSTimeInterval)
-    func twist(twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double)
-    func twist(twist: Twist, startedPlayingItemAtIndex itemIndex: Int)
-    func twist(twist: Twist, failedToPlayURL itemURL: NSURL, forItemAtIndex itemIndex: Int)
-    func twist(twist: Twist, downloadedMedia fileItemURL: NSURL, forItemAtIndex itemIndex: Int)
-    func twist(twist: Twist, willChangeStateFrom fromState: TwistState, to newState: TwistState)
-    func twist(twist: Twist, didChangeStateFrom fromState: TwistState, to newState: TwistState)
+    func twist(_ twist: Twist, loaded: TimeInterval, outOf totalDuration: TimeInterval)
+    func twist(_ twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double)
+    func twist(_ twist: Twist, startedPlayingItemAtIndex itemIndex: Int)
+    func twist(_ twist: Twist, failedToPlayURL itemURL: URL, forItemAtIndex itemIndex: Int)
+    func twist(_ twist: Twist, downloadedMedia fileItemURL: URL, forItemAtIndex itemIndex: Int)
+    func twist(_ twist: Twist, willChangeStateFrom fromState: TwistState, to newState: TwistState)
+    func twist(_ twist: Twist, didChangeStateFrom fromState: TwistState, to newState: TwistState)
 }
 
 public extension TwistDelegate {
-    func twist(twist: Twist, loaded: NSTimeInterval, outOf totalDuration: NSTimeInterval) {}
-    func twist(twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double) {}
-    func twist(twist: Twist, startedPlayingItemAtIndex itemIndex: Int) {}
-    func twist(twist: Twist, downloadedMedia fileItemURL: NSURL, forItemAtIndex itemIndex: Int) {}
-    func twist(twist: Twist, willChangeStateFrom fromState: TwistState, to newState: TwistState) {}
-    func twist(twist: Twist, didChangeStateFrom fromState: TwistState, to newState: TwistState) {}
+    func twist(_ twist: Twist, loaded: TimeInterval, outOf totalDuration: TimeInterval) {}
+    func twist(_ twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double) {}
+    func twist(_ twist: Twist, startedPlayingItemAtIndex itemIndex: Int) {}
+    func twist(_ twist: Twist, downloadedMedia fileItemURL: URL, forItemAtIndex itemIndex: Int) {}
+    func twist(_ twist: Twist, willChangeStateFrom fromState: TwistState, to newState: TwistState) {}
+    func twist(_ twist: Twist, didChangeStateFrom fromState: TwistState, to newState: TwistState) {}
 
-    func twist(twist: Twist, failedToPlayURL itemURL: NSURL, forItemAtIndex itemIndex: Int) {
+    func twist(_ twist: Twist, failedToPlayURL itemURL: URL, forItemAtIndex itemIndex: Int) {
         twist.next()
     }
 }
