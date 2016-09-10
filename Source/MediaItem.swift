@@ -58,18 +58,14 @@ class MediaItem: NSObject {
     }
 
     func setupObservers() {
-        self.avPlayerItem!.addObserver(
-            self,
-            forKeyPath: kStatusKey,
-            options: NSKeyValueObservingOptions.new.union(NSKeyValueObservingOptions.initial),
-            context: &myContext
-        )
-        self.avPlayerItem!.addObserver(
-            self,
-            forKeyPath: kLoadedTimeRangesKey,
-            options: NSKeyValueObservingOptions.new.union(NSKeyValueObservingOptions.initial),
-            context: &myContext
-        )
+        self.avPlayerItem!.addObserver(self,
+                                       forKeyPath: kStatusKey,
+                                       options: NSKeyValueObservingOptions.new.union(NSKeyValueObservingOptions.initial),
+                                       context: &myContext)
+        self.avPlayerItem!.addObserver(self,
+                                       forKeyPath: kLoadedTimeRangesKey,
+                                       options: NSKeyValueObservingOptions.new.union(NSKeyValueObservingOptions.initial),
+                                       context: &myContext)
         self.avPlayerItem!.addObserver(self,
                                        forKeyPath: kPlaybackBufferEmptyKey,
                                        options: NSKeyValueObservingOptions.new,
@@ -89,7 +85,7 @@ class MediaItem: NSObject {
                 case kStatusKey:
                     switch playerItem.status {
                     case .readyToPlay:
-                        self.player.play()
+                        debug("Item is ready to play")
                     case .failed:
                         debug("Failed to play current media item")
                         self.player.changeState(TwistState.failed)
@@ -107,10 +103,6 @@ class MediaItem: NSObject {
                         self.player.delegate?.twist(self.player,
                                                     loaded: availableDuration,
                                                     outOf: totalDuration)
-                    }
-                case kPlaybackBufferEmptyKey:
-                    if playerItem.isPlaybackBufferEmpty {
-                        self.player.changeState(.buffering)
                     }
                 case kPlaybackLikelyToKeepUp:
                     if playerItem.isPlaybackLikelyToKeepUp {
