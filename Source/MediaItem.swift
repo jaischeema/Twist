@@ -9,10 +9,7 @@
 import Foundation
 import AVFoundation
 
-var myContext  = 0
-let kStatusKey              = "status"
-let kLoadedTimeRangesKey    = "loadedTimeRanges"
-let kPlaybackBufferEmptyKey = "playbackBufferEmpty"
+var myContext = 0
 let kPlaybackLikelyToKeepUp = "playbackLikelyToKeepUp"
 
 class MediaItem: NSObject {
@@ -34,10 +31,9 @@ class MediaItem: NSObject {
     }
 
     func cleanup() {
-        self.avPlayerItem?.removeObserver(self, forKeyPath: kStatusKey)
-        self.avPlayerItem?.removeObserver(self, forKeyPath: kLoadedTimeRangesKey)
+        self.avPlayerItem?.removeObserver(self, forKeyPath: #keyPath(AVPlayerItem.status))
+        self.avPlayerItem?.removeObserver(self, forKeyPath: #keyPath(AVPlayerItem.loadedTimeRanges))
         self.avPlayerItem?.removeObserver(self, forKeyPath: kPlaybackLikelyToKeepUp)
-        self.avPlayerItem?.removeObserver(self, forKeyPath: kPlaybackBufferEmptyKey)
         self.avPlayerItem = nil
         self.mediaResourceLoader?.session.invalidateAndCancel()
     }
@@ -59,61 +55,64 @@ class MediaItem: NSObject {
 
     func setupObservers() {
         self.avPlayerItem!.addObserver(self,
-                                       forKeyPath: kStatusKey,
-                                       options: NSKeyValueObservingOptions.new.union(NSKeyValueObservingOptions.initial),
+                                       forKeyPath: #keyPath(AVPlayerItem.status),
+                                       options: [.new, .initial],
                                        context: &myContext)
         self.avPlayerItem!.addObserver(self,
-                                       forKeyPath: kLoadedTimeRangesKey,
-                                       options: NSKeyValueObservingOptions.new.union(NSKeyValueObservingOptions.initial),
-                                       context: &myContext)
-        self.avPlayerItem!.addObserver(self,
-                                       forKeyPath: kPlaybackBufferEmptyKey,
-                                       options: NSKeyValueObservingOptions.new,
+                                       forKeyPath: #keyPath(AVPlayerItem.loadedTimeRanges),
+                                       options: [.new, .initial],
                                        context: &myContext)
         self.avPlayerItem!.addObserver(self,
                                        forKeyPath: kPlaybackLikelyToKeepUp,
-                                       options: NSKeyValueObservingOptions.new,
+                                       options: [.new],
                                        context: &myContext)
     }
 
     // MARK: Observer methods
-    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        if context == &myContext {
-            if let playerItem = object as? AVPlayerItem {
-                guard let keyPath = keyPath else { return }
-                switch keyPath {
-                case kStatusKey:
-                    switch playerItem.status {
-                    case .readyToPlay:
-                        Twist.log.twistInfo("Item is ready to play")
-                    case .failed:
-                        Twist.log.twistError("Failed to play current media item")
-                        self.player.changeState(TwistState.failed)
-                        self.player.cleanupCurrentItem()
-                        self.player.delegate?.twist(self.player,
-                                                    failedToPlayURL: self.itemURL,
-                                                    forItemAtIndex: self.itemIndex)
-                    case .unknown:
-                        Twist.log.twistDebug("Status updated but not ready to play")
-                    }
-                case kLoadedTimeRangesKey:
-                    if let availableDuration = self.availableDurationForCurrentItem() {
-                        let duration = playerItem.duration
-                        let totalDuration = CMTimeGetSeconds(duration)
-                        self.player.delegate?.twist(self.player,
-                                                    loaded: availableDuration,
-                                                    outOf: totalDuration)
-                    }
-                case kPlaybackLikelyToKeepUp:
-                    if playerItem.isPlaybackLikelyToKeepUp {
-                        self.player.playRespectingForcePause()
-                    }
-                default:
-                    Twist.log.twistDebug("Unhandled key :\(keyPath)")
-                }
+    override func observeValue(forKeyPath keyPath: String?,
+                               of object: Any?,
+                               change: [NSKeyValueChangeKey : Any]?,
+                               context: UnsafeMutableRawPointer?) {
+        guard context == &myContext else {
+            super.observeValue(forKeyPath: keyPath,
+                               of: object,
+                               change: change,
+                               context: context)
+            return
+        }
+
+        guard let playerItem = object as? AVPlayerItem,
+              let keyPath = keyPath else { return }
+
+        switch keyPath {
+        case #keyPath(AVPlayerItem.status):
+            switch playerItem.status {
+            case .readyToPlay:
+                Twist.log.twistInfo("Item is ready to play")
+            case .failed:
+                Twist.log.twistError("Failed to play current media item")
+                self.player.changeState(TwistState.failed)
+                self.player.cleanupCurrentItem()
+                self.player.delegate?.twist(self.player,
+                                            failedToPlayURL: self.itemURL,
+                                            forItemAtIndex: self.itemIndex)
+            case .unknown:
+                Twist.log.twistDebug("Status updated but not ready to play")
             }
-        } else {
-            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+        case #keyPath(AVPlayerItem.loadedTimeRanges):
+            if let availableDuration = self.availableDurationForCurrentItem() {
+                let duration = playerItem.duration
+                let totalDuration = CMTimeGetSeconds(duration)
+                self.player.delegate?.twist(self.player,
+                                            loaded: availableDuration,
+                                            outOf: totalDuration)
+            }
+        case kPlaybackLikelyToKeepUp:
+            if playerItem.isPlaybackLikelyToKeepUp {
+                self.player.playRespectingForcePause()
+            }
+        default:
+            Twist.log.twistDebug("Unhandled key :\(keyPath)")
         }
     }
 
