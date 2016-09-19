@@ -73,7 +73,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
     var player: AVPlayer?
     var preConfigured: Bool = false
     var interruptedWhilePlaying: Bool = false
-    var periodicObserver: AnyObject?
+    var periodicObserver: Any?
     var currentItemInfo: [String: AnyObject]?
     var currentMediaItem: MediaItem?
 
@@ -135,10 +135,9 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
                 self.currentMediaItem = MediaItem(player: self, itemURL: currentItemURL!, itemIndex: index)
                 self.player = AVPlayer(playerItem: self.currentPlayerItem!)
                 self.periodicObserver = self.player?.addPeriodicTimeObserver(forInterval: CMTimeMake(1, 10),
-                                                                                        queue: DispatchQueue.main,
-                                                                                        using: { (_) in
-                    self.updatedPlayerTiming()
-                }) as AnyObject?
+                                                                             queue: DispatchQueue.main) {
+                                                                                _ in self.updatedPlayerTiming()
+                }
                 self.delegate?.twist(self, startedPlayingItemAtIndex: self.currentIndex)
                 self.changeState(.buffering)
             }
