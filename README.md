@@ -2,6 +2,12 @@
 
 Twist provides a full fledged music player functionality. **This is still in alpha stage and is being actively developed.**
 
+## Requirements
+
+- iOS 9.0+
+- Xcode 8.0+
+- Swift 3.0+
+
 ## Features
 
 - Play local and remote media
@@ -10,6 +16,7 @@ Twist provides a full fledged music player functionality. **This is still in alp
 - 3 Repeat modes: RepeatAll, RepeatOne, RepeatOff
 - Shuffling
 - Cache remote files to local filesystem
+- Configurable logging
 
 ## Installation
 
@@ -23,13 +30,13 @@ The music player is controlled via `TwistDelegate` and `TwistDataSource` protoco
 
 ```swift
 public protocol TwistDelegate {
-    func twist(twist: Twist, loaded: NSTimeInterval, outOf totalDuration: NSTimeInterval)
-    func twist(twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double)
-    func twist(twist: Twist, startedPlayingItemAtIndex itemIndex: Int)
-    func twist(twist: Twist, failedToPlayURL itemURL: NSURL, forItemAtIndex itemIndex: Int)
-    func twist(twist: Twist, downloadedMedia fileItemURL: NSURL, forItemAtIndex itemIndex: Int)
-    func twist(twist: Twist, willChangeStateFrom fromState: TwistState, to newState: TwistState)
-    func twist(twist: Twist, didChangeStateFrom fromState: TwistState, to newState: TwistState)
+    func twist(_ twist: Twist, loaded: TimeInterval, outOf totalDuration: TimeInterval)
+    func twist(_ twist: Twist, playedTo currentTime: Double, outOf totalDuration: Double)
+    func twist(_ twist: Twist, startedPlayingItemAtIndex itemIndex: Int)
+    func twist(_ twist: Twist, failedToPlayURL itemURL: URL, forItemAtIndex itemIndex: Int)
+    func twist(_ twist: Twist, downloadedMedia fileItemURL: URL, forItemAtIndex itemIndex: Int)
+    func twist(_ twist: Twist, willChangeStateFrom fromState: TwistState, to newState: TwistState)
+    func twist(_ twist: Twist, didChangeStateFrom fromState: TwistState, to newState: TwistState)
 }
 ```
 
@@ -39,13 +46,14 @@ All methods are optional and have been provided with default implementation.
 
 ```swift
 public protocol TwistDataSource {
-    func twistTotalItemsInQueue(twist: Twist) -> Int
-    func twist(twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: (NSURL?, NSError?) -> Void)
+    func twistTotalItemsInQueue(_ twist: Twist) -> Int
+    func twist(_ twist: Twist, urlForItemAtIndex itemIndex: Int, completionHandler completion: @escaping (URL?, NSError?) -> Void)
 
     // Optional
-    func twist(twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
-    func twist(twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String
-    func twist(twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo
+    func twist(_ twist: Twist, shouldCacheItemAtIndex itemIndex: Int) -> Bool
+    func twist(_ twist: Twist, cacheFilePathForItemAtIndex itemIndex: Int) -> String
+    func twist(_ twist: Twist, mediaInfoForItemAtIndex itemIndex: Int) -> TwistMediaInfo
+    func twistPreferredNextItemIndex(_ twist: Twist) -> Int?
 }
 ```
 
@@ -70,7 +78,6 @@ public struct TwistMediaInfo {
 
 ## TODO
 
-- Implement Proper Shuffling Logic
 - Add tests
 - Add installation instructions for Carthage and Cocoapods
 
@@ -85,7 +92,7 @@ Created by Jais Cheema
 
 Fork the repository and make a pull request and I will review and merge it. Try to
 
-- Pick a thing out of the TODO list
+- Pick a thing out of the TODO list (or something that is an obvious improvement)
 - Keep the changes simple
 - Add comments for the hairy bits
 - Add tests
