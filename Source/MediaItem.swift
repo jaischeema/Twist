@@ -106,7 +106,7 @@ class MediaItem: NSObject {
                     }
                 case kPlaybackLikelyToKeepUp:
                     if playerItem.isPlaybackLikelyToKeepUp {
-                        self.player.play()
+                        self.player.playRespectingForcePause()
                     }
                 default:
                     Twist.log.twistDebug("Unhandled key :\(keyPath)")

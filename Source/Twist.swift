@@ -73,6 +73,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
     var player: AVPlayer?
     var preConfigured: Bool = false
     var interruptedWhilePlaying: Bool = false
+    var forcePaused: Bool = false
     var periodicObserver: Any?
     var currentItemInfo: [String: AnyObject]?
     var currentMediaItem: MediaItem?
@@ -148,13 +149,21 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
         }
     }
     
-    open func pause() {
-        if !isPlayable { return }
-        
+    open func pause(softPause: Bool = false) {
+        guard isPlayable && self.currentState == .playing  else { return }
+
+        self.forcePaused = !softPause
+
         if self.currentState == .playing {
             Twist.log.twistInfo("Pausing current item")
             self.player?.pause()
             self.changeState(.paused)
+        }
+    }
+
+    func playRespectingForcePause() {
+        if !self.forcePaused {
+            self.play()
         }
     }
 
@@ -260,7 +269,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
             switch interruptionType {
             case .began:
                 self.interruptedWhilePlaying = (self.currentState == .playing)
-                self.pause()
+                self.pause(softPause: true)
             case .ended:
                 if self.interruptedWhilePlaying {
                     self.interruptedWhilePlaying = false
@@ -275,7 +284,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
             let reason = AVAudioSessionRouteChangeReason(rawValue: notificationType) {
             switch reason {
             case .oldDeviceUnavailable:
-                self.pause()
+                self.pause(softPause: true)
                 Twist.log.twistDebug("Route changed and paused")
             default:
                 Twist.log.twistDebug("Route changed but no need to pause: \(notificationType.description)")
