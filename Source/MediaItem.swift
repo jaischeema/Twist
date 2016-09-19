@@ -85,16 +85,16 @@ class MediaItem: NSObject {
                 case kStatusKey:
                     switch playerItem.status {
                     case .readyToPlay:
-                        debug("Item is ready to play")
+                        Twist.log.twistInfo("Item is ready to play")
                     case .failed:
-                        debug("Failed to play current media item")
+                        Twist.log.twistError("Failed to play current media item")
                         self.player.changeState(TwistState.failed)
                         self.player.cleanupCurrentItem()
                         self.player.delegate?.twist(self.player,
                                                     failedToPlayURL: self.itemURL,
                                                     forItemAtIndex: self.itemIndex)
                     case .unknown:
-                        debug("Status updated but not ready to play")
+                        Twist.log.twistDebug("Status updated but not ready to play")
                     }
                 case kLoadedTimeRangesKey:
                     if let availableDuration = self.availableDurationForCurrentItem() {
@@ -109,7 +109,7 @@ class MediaItem: NSObject {
                         self.player.play()
                     }
                 default:
-                    print("Unhandled key :\(keyPath)")
+                    Twist.log.twistDebug("Unhandled key :\(keyPath)")
                 }
             }
         } else {

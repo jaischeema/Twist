@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2003EDEF1D00CEAE00454292 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2003EDEE1D00CEAE00454292 /* MediaItem.swift */; };
 		2003EDF11D00DD0500454292 /* TwistMediaInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2003EDF01D00DD0500454292 /* TwistMediaInfo.swift */; };
+		2013A5901D8FA1D4007001DE /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2013A58F1D8FA1D4007001DE /* Logger.swift */; };
 		2069F3E61C3FAC4F00233AFA /* Twist.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2069F3DB1C3FAC4F00233AFA /* Twist.framework */; };
 		2069F3EB1C3FAC4F00233AFA /* TwistTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2069F3EA1C3FAC4F00233AFA /* TwistTests.swift */; };
 		2069F3F61C3FAC8A00233AFA /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2069F3F51C3FAC8A00233AFA /* AVFoundation.framework */; };
@@ -35,6 +36,7 @@
 /* Begin PBXFileReference section */
 		2003EDEE1D00CEAE00454292 /* MediaItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
 		2003EDF01D00DD0500454292 /* TwistMediaInfo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TwistMediaInfo.swift; sourceTree = "<group>"; };
+		2013A58F1D8FA1D4007001DE /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		2069F3DB1C3FAC4F00233AFA /* Twist.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Twist.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2069F3E51C3FAC4F00233AFA /* TwistTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TwistTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2069F3EA1C3FAC4F00233AFA /* TwistTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwistTests.swift; sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 				20E5A6681D001088006B644F /* PlayerIndex.swift */,
 				2003EDEE1D00CEAE00454292 /* MediaItem.swift */,
 				2003EDF01D00DD0500454292 /* TwistMediaInfo.swift */,
+				2013A58F1D8FA1D4007001DE /* Logger.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -242,6 +245,7 @@
 				2069F3FE1C3FADFC00233AFA /* Twist.swift in Sources */,
 				2003EDEF1D00CEAE00454292 /* MediaItem.swift in Sources */,
 				2003EDF11D00DD0500454292 /* TwistMediaInfo.swift in Sources */,
+				2013A5901D8FA1D4007001DE /* Logger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -10,13 +10,6 @@ import Foundation
 import AVFoundation
 import MediaPlayer
 
-let debugging  = true
-func debug(_ message: Any) {
-    if debugging {
-        print("Twist: \(message)")
-    }
-}
-
 public enum TwistRepeatMode: Int {
     case all = 0
     case single
@@ -42,6 +35,7 @@ public enum TwistState: Int {
 
 public final class Twist: NSObject, AVAudioPlayerDelegate {
     open static let defaultPlayer = Twist()
+    open static var log: TwistLogger = DefaultTwistLogger()
     open var dataSource: TwistDataSource?
     open var delegate: TwistDelegate?
     
@@ -119,7 +113,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
     open func play(_ itemIndex: Int? = nil) {
         let index = itemIndex ?? self.currentIndex
         if !isPlayable {
-            debug("Player called but player not in playable state, doing nothing.")
+            Twist.log.twistDebug("Player called but player not in playable state, doing nothing.")
             return
         }
 
@@ -130,7 +124,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
         }
         
         if self.currentMediaItem == nil {
-            debug("Creating new AVPlayerItem")
+            Twist.log.twistDebug("Creating new AVPlayerItem")
             self.currentIndex = index
             
             self.dataSource?.twist(self, urlForItemAtIndex: index) { (currentItemURL, error) in
@@ -149,7 +143,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
                 self.changeState(.buffering)
             }
         } else {
-            debug("Playing current Item")
+            Twist.log.twistInfo("Playing current Item")
             self.player!.play()
             self.changeState(.playing)
         }
@@ -159,7 +153,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
         if !isPlayable { return }
         
         if self.currentState == .playing {
-            debug("Pausing current item")
+            Twist.log.twistInfo("Pausing current item")
             self.player?.pause()
             self.changeState(.paused)
         }
@@ -175,7 +169,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
 
     open func stop() {
         if (self.player != nil) {
-            debug("Stopping current item")
+            Twist.log.twistInfo("Stopping current item")
             self.cleanupCurrentItem()
             self.changeState(.waiting)
         }
@@ -283,9 +277,9 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
             switch reason {
             case .oldDeviceUnavailable:
                 self.pause()
-                debug("Route changed and paused")
+                Twist.log.twistDebug("Route changed and paused")
             default:
-                debug("Route changed but no need to pause: \(notificationType.description)")
+                Twist.log.twistDebug("Route changed but no need to pause: \(notificationType.description)")
             }
         }
     }
@@ -300,16 +294,16 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
                 do {
                     try audioSession.setCategory(AVAudioSessionCategoryPlayback)
                 } catch let error as NSError {
-                    debug("Set Category error: \(error.localizedDescription)")
+                    Twist.log.twistError("Set Category error: \(error.localizedDescription)")
                 }
                 do {
                     try audioSession.setActive(true)
                 } catch let error as NSError {
-                    debug("Set active error: \(error.localizedDescription)")
+                    Twist.log.twistError("Set active error: \(error.localizedDescription)")
                 }
             }
         } else {
-            debug("Unable to register background playback")
+            Twist.log.twistError("Unable to register background playback")
         }
     }
 
@@ -341,7 +335,7 @@ public final class Twist: NSObject, AVAudioPlayerDelegate {
 
     func changeState(_ newState: TwistState) {
         self.delegate?.twist(self, willChangeStateFrom: currentState, to: newState)
-        debug("Changing from \(currentState) => \(newState)")
+        Twist.log.twistInfo("Changing from \(currentState) => \(newState)")
         self.currentState = newState
         self.delegate?.twist(self, didChangeStateFrom: currentState, to: newState)
     }

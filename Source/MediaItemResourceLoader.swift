@@ -60,25 +60,25 @@ class MediaItemResourceLoader: NSObject, URLSessionDataDelegate, AVAssetResource
     
     func configureAsset() {
         if isCachingEnabled {
-            debug("Caching is enabled")
+            Twist.log.twistDebug("Caching is enabled")
             if hasCachedFile {
-                debug("Local cached file is available")
+                Twist.log.twistDebug("Local cached file is available")
                 self._asset = AVURLAsset(url: URL(fileURLWithPath: self.cachePath!), options: [:])
             } else {
-                debug("Local cache file is not available")
+                Twist.log.twistDebug("Local cache file is not available")
                 let streamingURL = replaceUrlScheme(self.mediaURL, scheme: "streaming")!
                 self._asset = AVURLAsset(url: streamingURL, options: [:])
                 self._asset!.resourceLoader.setDelegate(self, queue: DispatchQueue.main)
             }
         } else {
-            debug("Caching is not enabled")
+            Twist.log.twistDebug("Caching is not enabled")
             self._asset = AVURLAsset(url: self.mediaURL, options: [:])
         }
         assert(self._asset != nil, "Asset should not be nil")
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-        debug("Received response")
+        Twist.log.twistDebug("Received response")
         self.data = NSMutableData()
         self.response = response
         self.processPendingRequests()
@@ -86,22 +86,22 @@ class MediaItemResourceLoader: NSObject, URLSessionDataDelegate, AVAssetResource
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        print(".", terminator:"")
+        print(".", terminator: "")
         self.data?.append(data)
         self.processPendingRequests()
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if error != nil {
-            debug(error)
+            Twist.log.twistError(error!.localizedDescription)
         } else {
             self.processPendingRequests()
-            debug("Writing data to local cached file: \(self.cachePath!)")
+            Twist.log.twistInfo("Writing data to local cached file: \(self.cachePath!)")
             do {
                 try self.data?.write(toFile: self.cachePath!, options: NSData.WritingOptions.atomicWrite)
                 self.successfulDownloadCallback?(mediaURL)
             } catch {
-                debug("Unable to write to original file")
+                Twist.log.twistError("Unable to write to original file")
             }
         }
     }
@@ -148,7 +148,7 @@ class MediaItemResourceLoader: NSObject, URLSessionDataDelegate, AVAssetResource
 
     func resourceLoader(_ resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
         if self.connection == nil {
-            debug("Starting request to get media URL: \(self.mediaURL)")
+            Twist.log.twistDebug("Starting request to get media URL: \(self.mediaURL)")
             let request = URLRequest(url: replaceUrlScheme(loadingRequest.request.url!, scheme: "http")!)
             self.connection = session.dataTask(with: request)
             self.connection?.resume()
